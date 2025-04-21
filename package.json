@@ -1,0 +1,17 @@
+{
+  "name": "csci314_project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "database.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Matchaisawesome98/CSCI314_Project.git"
+  },
+  "private": true,
+  "dependencies": {
+    "mysql2": "^3.14.0"
+  }
+}
