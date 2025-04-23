@@ -37,7 +37,7 @@ app.post('/api/authenticate', (req, res) => {
 
     // IMPORTANT: In production, use parameterized queries to prevent SQL injection
     // Also, passwords should be hashed, not stored in plain text
-    const query = 'SELECT * FROM home_owner WHERE user_id = ? AND password = ?';
+    const query = 'SELECT * FROM user_accounts WHERE user_id = ? AND password = ?';
 
     pool.query(query, [username, password], (error, results) => {
         if (error) {
@@ -67,7 +67,7 @@ app.post('/api/authenticate', (req, res) => {
 app.get('/get-homeowners', async (req, res) => {
     try {
         const connection = await mysql2Promise.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT * FROM home_owner');
+        const [rows] = await connection.execute('SELECT * FROM user_accounts');
         await connection.end();
 
         res.json({
