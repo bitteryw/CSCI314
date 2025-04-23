@@ -37,7 +37,7 @@ class LoginController {
         const credentials = this.loginPage.getUserInput();
         const user = new User(credentials.username, credentials.password);
 
-        const isAuthenticated = this.authenticator.authenticate(user);
+        const isAuthenticated = await this.authenticator.authenticate(user);
 
         if (isAuthenticated) {
             this.loginPage.displaySuccessMsg();
