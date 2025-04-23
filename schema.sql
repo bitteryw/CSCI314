@@ -1,18 +1,17 @@
--- Creates the database for all user info
+-- Create the database for all user info
 CREATE DATABASE IF NOT EXISTS users;
+
 -- Use this database
 USE users;
 
--- Clean up any existing temporary tables
-DROP TEMPORARY TABLE IF EXISTS first_names;
-DROP TEMPORARY TABLE IF EXISTS last_names;
-
-CREATE TABLE IF NOT EXISTS home_owner (
-                                          user_id VARCHAR(20) PRIMARY KEY,
+-- Create the user_accounts table (previously called home_owner)
+CREATE TABLE IF NOT EXISTS user_accounts (
+                                             user_id VARCHAR(20) PRIMARY KEY,
     email VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(50) NOT NULL,
     first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL
+    last_name VARCHAR(50) NOT NULL,
+    roles VARCHAR(20) DEFAULT 'home_owner'
     );
 
 -- Sample first names and last names
@@ -37,26 +36,21 @@ INSERT INTO last_names VALUES
                            ('Carter'), ('Roberts'), ('Gomez'), ('Phillips'), ('Evans'), ('Turner'), ('Diaz'), ('Parker');
 
 -- Insert 50 records
-DROP PROCEDURE IF EXISTS populate_home_owners;
-
+DROP PROCEDURE IF EXISTS populate_user_accounts;
 DELIMITER //
-CREATE PROCEDURE populate_home_owners()
+CREATE PROCEDURE populate_user_accounts()
 BEGIN
     DECLARE i INT DEFAULT 1;
-
     -- Clear existing data if needed
-    -- DELETE FROM home_owner;
-
+    -- DELETE FROM user_accounts;
     WHILE i <= 50 DO
         -- Format numbers with leading zeros for 01-09
         SET @user_num = LPAD(i, 2, '0');
-
         -- Get random names
         SET @first = (SELECT name FROM first_names ORDER BY RAND() LIMIT 1);
         SET @last = (SELECT name FROM last_names ORDER BY RAND() LIMIT 1);
-
         -- Insert the record
-INSERT INTO home_owner (user_id, email, password, first_name, last_name)
+INSERT INTO user_accounts (user_id, email, password, first_name, last_name)
 VALUES (
            CONCAT('user', @user_num),
            CONCAT('email', @user_num, '@gmail.com'),
@@ -64,18 +58,22 @@ VALUES (
            @first,
            @last
        );
-
 SET i = i + 1;
 END WHILE;
 
-    -- Clean up temporary tables
-    DROP TEMPORARY TABLE IF EXISTS first_names;
+    -- Set the first 5 users to have admin roles
+UPDATE user_accounts
+SET roles = 'user_admin'
+WHERE user_id IN ('user01', 'user02', 'user03', 'user04', 'user05');
+
+-- Clean up temporary tables
+DROP TEMPORARY TABLE IF EXISTS first_names;
     DROP TEMPORARY TABLE IF EXISTS last_names;
 END //
 DELIMITER ;
 
 -- Run the procedure to populate the table
-CALL populate_home_owners();
+CALL populate_user_accounts();
 
 -- See the results
-SELECT * FROM home_owner;
+SELECT * FROM user_accounts;
