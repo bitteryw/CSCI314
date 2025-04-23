@@ -66,22 +66,6 @@ class User {
     }
 }
 
-
-// SERVICE (not strictly part of BCE, but necessary)
-// class AuthenticationService {
-//     authenticate(user) {
-//         // In a real system, this would check against a database
-//         return user.getUsername() === "john" && user.getPassword() === "password";
-//     }
-// }
-
-// // Entry point
-// function handleLogin() {
-//     const loginController = new LoginController();
-//     loginController.run();
-//     loginController.processLogin();
-// }
-
 // SERVICE
 class AuthenticationService {
     async authenticate(user) {
@@ -116,4 +100,22 @@ async function handleLogin(event) {
 
     return false; // Prevent form submission
 }
+
+
+// SERVICE (not strictly part of BCE, but necessary)
+// class AuthenticationService {
+//     authenticate(user) {
+//         // In a real system, this would check against a database
+//         return user.getUsername() === "john" && user.getPassword() === "password";
+//     }
+// }
+
+// // Entry point
+// function handleLogin() {
+//     const loginController = new LoginController();
+//     loginController.run();
+//     loginController.processLogin();
+// }
+
+
 
