@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Suspension Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .search-box {
+            display: flex;
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .search-box button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .search-box button:hover {
+            background-color: #45a049;
+        }
+
+        .user-count {
+            font-weight: bold;
+            color: #666;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .status-suspended {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .status-active {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .empty-list {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 5px;
+            width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            animation: modalopen 0.3s;
+        }
+
+        @keyframes modalopen {
+            from {opacity: 0; transform: translateY(-50px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+
+        .modal-title {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .modal-message {
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .modal-buttons button {
+            padding: 8px 16px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-confirm {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .btn-cancel {
+            background-color: #95a5a6;
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-cancel:hover {
+            background-color: #7f8c8d;
+        }
+
+        .notification {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            text-align: center;
+            display: none;
+        }
+
+        .notification-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .notification-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Styles for the unsuspend button */
+        .btn-unsuspend {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-unsuspend:hover {
+            background-color: #2980b9;
+        }
+
+        /* Action column styling */
+        .action-column {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>User Suspension Management</h1>
+        
+        <div id="notification" class="notification"></div>
+        
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Search for user by name...">
+                <button id="search-button">Search</button>
+            </div>
+            <div class="user-count">
+                Suspended Users: <span id="suspended-count">0</span>
+            </div>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Suspension Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="suspension-list">
+                <!-- User data will be inserted here -->
+            </tbody>
+        </table>
+        
+        <div id="empty-list-message" class="empty-list">No suspended users found.</div>
+    </div>
+    
+    <!-- Confirmation Modal for Suspension -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Confirm User Suspension</h2>
+            <p class="modal-message" id="modal-message">Are you sure you want to suspend this user?</p>
+            <div class="modal-buttons">
+                <button id="cancel-button" class="btn-cancel">No</button>
+                <button id="confirm-button" class="btn-confirm">Yes</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confirmation Modal for Unsuspension -->
+    <div id="unsuspend-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Confirm User Unsuspension</h2>
+            <p class="modal-message" id="unsuspend-modal-message">Are you sure you want to unsuspend this user?</p>
+            <div class="modal-buttons">
+                <button id="unsuspend-cancel-button" class="btn-cancel">No</button>
+                <button id="unsuspend-confirm-button" class="btn-confirm">Yes</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const searchInput = document.getElementById('search-input');
+            const searchButton = document.getElementById('search-button');
+            const suspensionList = document.getElementById('suspension-list');
+            const suspendedCount = document.getElementById('suspended-count');
+            const emptyListMessage = document.getElementById('empty-list-message');
+            const confirmationModal = document.getElementById('confirmation-modal');
+            const unsuspendModal = document.getElementById('unsuspend-modal');
+            const modalMessage = document.getElementById('modal-message');
+            const unsuspendModalMessage = document.getElementById('unsuspend-modal-message');
+            const confirmButton = document.getElementById('confirm-button');
+            const cancelButton = document.getElementById('cancel-button');
+            const unsuspendConfirmButton = document.getElementById('unsuspend-confirm-button');
+            const unsuspendCancelButton = document.getElementById('unsuspend-cancel-button');
+            const notification = document.getElementById('notification');
+            
+            // Sample user data - in a real application, this would come from a backend
+            let users = [
+                { id: 1, name: "John Smith", email: "john.smith@example.com", status: "Active", suspensionDate: null },
+                { id: 2, name: "Emily Johnson", email: "emily.johnson@example.com", status: "Active", suspensionDate: null },
+                { id: 3, name: "Michael Brown", email: "michael.brown@example.com", status: "Suspended", suspensionDate: "2025-04-18" },
+                { id: 4, name: "Sarah Davis", email: "sarah.davis@example.com", status: "Active", suspensionDate: null },
+                { id: 5, name: "James Wilson", email: "james.wilson@example.com", status: "Suspended", suspensionDate: "2025-04-20" },
+                { id: 6, name: "Jessica Taylor", email: "jessica.taylor@example.com", status: "Active", suspensionDate: null },
+                { id: 7, name: "Daniel Martinez", email: "daniel.martinez@example.com", status: "Active", suspensionDate: null },
+                { id: 8, name: "Jennifer Anderson", email: "jennifer.anderson@example.com", status: "Suspended", suspensionDate: "2025-04-15" },
+                { id: 9, name: "Robert Thomas", email: "robert.thomas@example.com", status: "Active", suspensionDate: null },
+                { id: 10, name: "Lisa Jackson", email: "lisa.jackson@example.com", status: "Active", suspensionDate: null },
+                { id: 11, name: "Xavier Low", email: "xavier.low@example.com", status: "Active", suspensionDate: null }
+            ];
+            
+            // Current user selected for suspension or unsuspension
+            let selectedUser = null;
+            
+            // Initialize the page
+            function init() {
+                renderSuspensionList();
+                updateSuspendedCount();
+            }
+            
+            // Render the suspension list
+            function renderSuspensionList() {
+                // Clear the list
+                suspensionList.innerHTML = '';
+                
+                // Filter only suspended users
+                const suspendedUsers = users.filter(user => user.status === "Suspended");
+                
+                if (suspendedUsers.length === 0) {
+                    emptyListMessage.style.display = 'block';
+                } else {
+                    emptyListMessage.style.display = 'none';
+                    
+                    // Render each suspended user
+                    suspendedUsers.forEach(user => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${user.id}</td>
+                            <td>${user.name}</td>
+                            <td>${user.email}</td>
+                            <td class="status-suspended">${user.status}</td>
+                            <td>${user.suspensionDate}</td>
+                            <td class="action-column">
+                                <button class="btn-unsuspend" data-user-id="${user.id}">Unsuspend</button>
+                            </td>
+                        `;
+                        suspensionList.appendChild(row);
+                    });
+                    
+                    // Add event listeners to unsuspend buttons
+                    document.querySelectorAll('.btn-unsuspend').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const userId = parseInt(this.getAttribute('data-user-id'));
+                            initiateUnsuspend(userId);
+                        });
+                    });
+                }
+            }
+            
+            // Update the suspended users count
+            function updateSuspendedCount() {
+                const count = users.filter(user => user.status === "Suspended").length;
+                suspendedCount.textContent = count;
+            }
+            
+            // Show notification
+            function showNotification(message, isSuccess = true) {
+                notification.textContent = message;
+                notification.className = `notification ${isSuccess ? 'notification-success' : 'notification-error'}`;
+                notification.style.display = 'block';
+                
+                // Hide after 5 seconds
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Search for a user by name
+            function searchUser() {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                
+                if (!searchTerm) {
+                    showNotification("Please enter a name to search", false);
+                    return;
+                }
+                
+                // Find the user by name (case-insensitive)
+                const foundUser = users.find(user => 
+                    user.name.toLowerCase().includes(searchTerm)
+                );
+                
+                if (foundUser) {
+                    if (foundUser.status === "Suspended") {
+                        showNotification(`${foundUser.name} is already suspended`, false);
+                    } else {
+                        // Show confirmation modal
+                        selectedUser = foundUser;
+                        modalMessage.textContent = `Are you sure you want to suspend ${foundUser.name}?`;
+                        confirmationModal.style.display = 'block';
+                    }
+                } else {
+                    showNotification("User not found", false);
+                }
+            }
+            
+            // Initiate unsuspend process
+            function initiateUnsuspend(userId) {
+                const user = users.find(u => u.id === userId);
+                if (user) {
+                    selectedUser = user;
+                    unsuspendModalMessage.textContent = `Are you sure you want to unsuspend ${user.name}?`;
+                    unsuspendModal.style.display = 'block';
+                }
+            }
+            
+            // Suspend a user
+            function suspendUser() {
+                if (selectedUser) {
+                    // Update user status
+                    const userIndex = users.findIndex(user => user.id === selectedUser.id);
+                    if (userIndex !== -1) {
+                        users[userIndex].status = "Suspended";
+                        // Set suspension date to today
+                        const today = new Date();
+                        const formattedDate = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+                        users[userIndex].suspensionDate = formattedDate;
+                        
+                        // Update UI
+                        renderSuspensionList();
+                        updateSuspendedCount();
+                        showNotification(`${selectedUser.name} has been suspended`);
+                        
+                        // Clear search input
+                        searchInput.value = '';
+                    }
+                }
+                
+                // Close modal
+                confirmationModal.style.display = 'none';
+                selectedUser = null;
+            }
+            
+            // Unsuspend a user
+            function unsuspendUser() {
+                if (selectedUser) {
+                    // Update user status
+                    const userIndex = users.findIndex(user => user.id === selectedUser.id);
+                    if (userIndex !== -1) {
+                        users[userIndex].status = "Active";
+                        users[userIndex].suspensionDate = null;
+                        
+                        // Update UI
+                        renderSuspensionList();
+                        updateSuspendedCount();
+                        showNotification(`${selectedUser.name} has been unsuspended`);
+                    }
+                }
+                
+                // Close modal
+                unsuspendModal.style.display = 'none';
+                selectedUser = null;
+            }
+            
+            // Event Listeners
+            searchButton.addEventListener('click', searchUser);
+            
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchUser();
+                }
+            });
+            
+            confirmButton.addEventListener('click', suspendUser);
+            
+            cancelButton.addEventListener('click', function() {
+                confirmationModal.style.display = 'none';
+                selectedUser = null;
+            });
+            
+            unsuspendConfirmButton.addEventListener('click', unsuspendUser);
+            
+            unsuspendCancelButton.addEventListener('click', function() {
+                unsuspendModal.style.display = 'none';
+                selectedUser = null;
+            });
+            
+            // Close modals if clicking outside
+            window.addEventListener('click', function(e) {
+                if (e.target === confirmationModal) {
+                    confirmationModal.style.display = 'none';
+                    selectedUser = null;
+                }
+                if (e.target === unsuspendModal) {
+                    unsuspendModal.style.display = 'none';
+                    selectedUser = null;
+                }
+            });
+            
+            // Initialize the page
+            init();
+        });
+    </script>
+</body>
+</html>

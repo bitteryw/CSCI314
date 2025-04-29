@@ -6,13 +6,19 @@ USE users;
 
 -- Create the user_accounts table (previously called home_owner)
 CREATE TABLE IF NOT EXISTS user_accounts (
-                                             user_id VARCHAR(20) PRIMARY KEY,
+    user_id VARCHAR(20) PRIMARY KEY,
     email VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(50) NOT NULL,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     roles VARCHAR(20) DEFAULT 'home_owner'
     );
+
+
+
+-- Alter table to make sure all rows are unique
+ALTER TABLE user_accounts ADD CONSTRAINT uc_person UNIQUE(first_name,last_name);
+
 
 -- Sample first names and last names
 CREATE TEMPORARY TABLE first_names (name VARCHAR(50));
