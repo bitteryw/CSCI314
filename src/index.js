@@ -56,7 +56,7 @@ class UserLoginPage {
                 targetPage = "../src/home-owner.html";
                 break;
             case 'home_cleaner':
-                targetPage = "../src/homeCleaner-homePage.html";
+                targetPage = "../src/home_cleaner/homePage.html";
                 break;
             case 'user_admin':
                 targetPage = "../src/user-management.html";
