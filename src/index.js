@@ -43,8 +43,33 @@ class UserLoginPage {
         document.getElementById("message").style.color = "red";
     }
 
-    navigateToUserPage() {
-        window.location.href = "user-management.html"; // Change this to your desired page
+    // navigateToUserPage() {
+    //     window.location.href = "../src/user-management.html"; // Change this to your desired page
+    // }
+
+    navigateToHomePage(role) {
+        let targetPage;
+        const processedRole = (role || '').toString().trim().toLowerCase();
+
+        switch (processedRole) {
+            case 'home_owner':
+                targetPage = "../src/home-owner.html";
+                break;
+            case 'home_cleaner':
+                targetPage = "../src/homeCleaner-homePage.html";
+                break;
+            case 'user_admin':
+                targetPage = "../src/user-management.html";
+                break;
+            case 'platform_manager':
+                targetPage = "../src/platform-manager.html";
+                break;
+            default:
+                console.log("Role not recognized, using default page. Received:", role);
+                targetPage = "../src/user-management.html";
+        }
+        console.log("Redirecting to:", targetPage);
+        window.location.href = targetPage;
     }
 }
 
@@ -65,16 +90,17 @@ class LoginController {
         const user = new User(username, password);
 
         // Business logic: authenticate user
-        const isAuthenticated = await this.authenticator.authenticate(user);
+        const authResult = await this.authenticator.authenticate(user);
 
         // Get reference to boundary
         const loginPage = this.getLoginPage();
 
         // Handle result (no UI logic here)
-        if (isAuthenticated) {
+        if (authResult.authenticated) {
             loginPage.displaySuccessMsg();
             setTimeout(() => {
-                loginPage.navigateToUserPage();
+                // Navigate based on user_role
+                loginPage.navigateToHomePage(authResult.userRole);
             }, 1000);
         } else {
             loginPage.displayErrorMsg();
@@ -119,10 +145,16 @@ class AuthenticationService {
             });
 
             const data = await response.json();
-            return data.authenticated;
+            return{
+                authenticated: data.authenticated,
+                userRole: data.userRole || 'home_owner' // Default to home_owner if no role is provided
+            };
         } catch (error) {
             console.error('Authentication error:', error);
-            return false;
+            return{
+                authenticated: false,
+                userRole: null
+            };
         }
     }
 }

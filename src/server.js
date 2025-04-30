@@ -21,7 +21,7 @@ const dbConfig = {
     host: '127.0.0.1',
     port: 3306,
     user: 'root',
-    password: 'Sandman@9139',
+    password: 'password', //please change if needed
     database: 'users'
 };
 
@@ -50,9 +50,11 @@ app.post('/api/authenticate', (req, res) => {
         }
 
         if (results.length > 0) {
+            const userRole = results[0].roles || 'home_owner';
             res.json({
                 success: true,
-                authenticated: true
+                authenticated: true,
+                userRole: userRole
             });
         } else {
             res.json({
