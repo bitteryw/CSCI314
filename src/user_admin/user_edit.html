@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management Dashboard</title>
+    <style>
+        /* General styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        /* Controls section */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .search-area {
+            display: flex;
+            align-items: center;
+        }
+
+        .search-area label {
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        #username-search {
+            padding: 8px;
+            border: 1px solid #ccc;
+            width: 200px;
+            border-radius: 4px;
+        }
+
+        #search-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            position: absolute;
+            right: 8px;
+        }
+
+        .button-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            padding: 8px 15px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .control-btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        /* Table styles */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+            border-top: 1px solid #ccc;
+            padding-top: 20px;
+        }
+
+        #users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #users-table th,
+        #users-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        #users-table th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+        }
+
+        #users-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .suspended {
+            background-color: #fff0f0 !important;
+            color: #c00;
+        }
+
+        .action-btn {
+            background-color: #0066cc;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 5px;
+            transition: background-color 0.2s;
+        }
+
+        .action-btn:hover {
+            background-color: #0055aa;
+        }
+
+        .action-btn.suspend {
+            background-color: #cc6600;
+        }
+        
+        .action-btn.suspend:hover {
+            background-color: #aa5500;
+        }
+        
+        .action-btn.unsuspend {
+            background-color: #00cc66;
+        }
+        
+        .action-btn.unsuspend:hover {
+            background-color: #00aa55;
+        }
+
+        /* Loading indicator */
+        #loading-indicator {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666;
+            display: none;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 5px;
+            width: 500px;
+            max-width: 90%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        select.input-field {
+            background-color: white;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .error-message {
+            color: #cc0000;
+            font-size: 12px;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .cancel-btn {
+            background-color: #f0f0f0;
+        }
+
+        .cancel-btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        .save-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background-color: #45a049;
+        }
+
+        .status-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>User Management Dashboard</h1>
+        
+        <div class="controls">
+            <div class="search-area">
+                <label for="username-search">Search: </label>
+                <div class="search-box">
+                    <input type="text" id="username-search" placeholder="ID, name, email...">
+                    <button id="search-btn">🔍</button>
+                </div>
+            </div>
+            
+            <div class="button-area">
+                <button id="sort-role-btn" class="control-btn">Sort by Role</button>
+                <button id="show-suspended-btn" class="control-btn">Show Suspended</button>
+            </div>
+        </div>
+        
+        <div id="status-message" class="status-message"></div>
+        
+        <div class="table-container">
+            <table id="users-table">
+                <thead>
+                    <tr>
+                        <th>NO.</th>
+                        <th>User ID</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body">
+                    <!-- User data will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="loading-indicator">Loading users...</div>
+    </div>
+    
+    <!-- Edit User Modal -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Edit User</h2>
+            
+            <div class="form-group">
+                <label>User ID:</label>
+                <span id="edit-user-id" class="input-field" style="display: inline-block"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit-first-name">First Name:</label>
+                <input type="text" id="edit-first-name" class="input-field">
+                <span class="error-message" id="first-name-error"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit-last-name">Last Name:</label>
+                <input type="text" id="edit-last-name" class="input-field">
+                <span class="error-message" id="last-name-error"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit-email">Email:</label>
+                <input type="email" id="edit-email" class="input-field">
+                <span class="error-message" id="email-error"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit-role">Role:</label>
+                <select id="edit-role" class="input-field">
+                    <option value="home_owner">Home Owner</option>
+                    <option value="user_admin">User Admin</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="edit-suspended" class="input-checkbox">
+                    <label for="edit-suspended">Account Suspended</label>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button id="cancel-btn" class="btn cancel-btn">Cancel</button>
+                <button id="save-btn" class="btn save-btn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // DOM elements
+        const usersTableBody = document.getElementById('users-table-body');
+        const searchInput = document.getElementById('username-search');
+        const sortRoleButton = document.getElementById('sort-role-btn');
+        const showSuspendedButton = document.getElementById('show-suspended-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const editModal = document.getElementById('edit-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const editUserId = document.getElementById('edit-user-id');
+        const editFirstName = document.getElementById('edit-first-name');
+        const editLastName = document.getElementById('edit-last-name');
+        const editEmail = document.getElementById('edit-email');
+        const editRole = document.getElementById('edit-role');
+        const editSuspended = document.getElementById('edit-suspended');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const firstNameError = document.getElementById('first-name-error');
+        const lastNameError = document.getElementById('last-name-error');
+        const emailError = document.getElementById('email-error');
+        const statusMessage = document.getElementById('status-message');
+
+        // State variables
+        let users = [];
+        let filteredUsers = [];
+        let sortByRole = false;
+        let showOnlySuspended = false;
+        let currentUser = null;
+        let viewMode = false;
+
+        // Show status message function
+        function showStatusMessage(message, isError = false) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${isError ? 'error' : 'success'}`;
+            statusMessage.style.display = 'block';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        // Fetch users from the API
+        async function fetchUsers() {
+            try {
+                loadingIndicator.style.display = 'block';
+                
+                const response = await fetch('http://localhost:3000/get-homeowners');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch users');
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    users = data.data;
+                    filteredUsers = [...users];
+                    applyFilters();
+                } else {
+                    throw new Error('Invalid data format');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                usersTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: red;">
+                            Failed to load users. ${error.message}
+                        </td>
+                    </tr>
+                `;
+                showStatusMessage(`Failed to load users: ${error.message}`, true);
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        // Apply all filters and sorting to users array
+        function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            // Filter by search term
+            filteredUsers = users.filter(user => {
+                const fullName = `${user.first_name} ${user.last_name}`.toLowerCase();
+                return (
+                    user.user_id.toLowerCase().includes(searchTerm) ||
+                    fullName.includes(searchTerm) ||
+                    user.email.toLowerCase().includes(searchTerm) ||
+                    (user.first_name && user.first_name.toLowerCase().includes(searchTerm)) ||
+                    (user.last_name && user.last_name.toLowerCase().includes(searchTerm))
+                );
+            });
+            
+            // Filter by suspended status if needed
+            if (showOnlySuspended) {
+                filteredUsers = filteredUsers.filter(user => user.isSuspended === true);
+            }
+            
+            renderUsers();
+        }
+
+        // Render users table
+        function renderUsers() {
+            let displayUsers = [...filteredUsers];
+            
+            if (sortByRole) {
+                displayUsers.sort((a, b) => a.roles.localeCompare(b.roles));
+            }
+            
+            usersTableBody.innerHTML = '';
+            
+            displayUsers.forEach((user, index) => {
+                const isAdmin = user.roles === 'user_admin';
+                const isSuspended = user.isSuspended === true;
+                
+                const row = document.createElement('tr');
+                if (isSuspended) {
+                    row.classList.add('suspended');
+                }
+                
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${user.user_id}</td>
+                    <td>${user.first_name || ''}</td>
+                    <td>${user.last_name || ''}</td>
+                    <td>${user.email}</td>
+                    <td>${isAdmin ? 'Admin' : 'Home Owner'}</td>
+                    <td>${isSuspended ? 'Suspended' : 'Active'}</td>
+                    <td>
+                        <button class="action-btn edit" data-id="${user.user_id}">Edit</button>
+                        <button class="action-btn ${isSuspended ? 'unsuspend' : 'suspend'}" data-id="${user.user_id}">
+                            ${isSuspended ? 'Unsuspend' : 'Suspend'}
+                        </button>
+                    </td>
+                `;
+                
+                usersTableBody.appendChild(row);
+            });
+            
+            // Add event listeners to action buttons
+            document.querySelectorAll('.action-btn.edit').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-id');
+                    const user = users.find(u => u.user_id === userId);
+                    if (user) {
+                        openEditModal(user);
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.action-btn.suspend, .action-btn.unsuspend').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-id');
+                    const user = users.find(u => u.user_id === userId);
+                    if (user) {
+                        toggleSuspension(user);
+                    }
+                });
+            });
+        }
+
+        // Toggle user suspension
+        async function toggleSuspension(user) {
+            try {
+                const newStatus = !user.isSuspended;
+                
+                const response = await fetch('http://localhost:3000/api/toggle-suspension', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: user.user_id,
+                        isSuspended: newStatus
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || `Server error: ${response.status}`);
+                }
+                
+                // Update local user data
+                const index = users.findIndex(u => u.user_id === user.user_id);
+                if (index !== -1) {
+                    users[index].isSuspended = newStatus;
+                }
+                
+                showStatusMessage(`User ${newStatus ? 'suspended' : 'unsuspended'} successfully!`);
+                applyFilters();
+                
+            } catch (error) {
+                console.error('Error toggling suspension:', error);
+                showStatusMessage(`Failed to update suspension status: ${error.message}`, true);
+            }
+        }
+
+        // Open edit modal
+        function openEditModal(user) {
+            currentUser = { ...user };
+            
+            // Update modal title
+            modalTitle.textContent = 'Edit User';
+            
+            // Fill form fields
+            editUserId.textContent = user.user_id;
+            editFirstName.value = user.first_name || '';
+            editLastName.value = user.last_name || '';
+            editEmail.value = user.email || '';
+            editRole.value = user.roles || 'home_owner';
+            editSuspended.checked = user.isSuspended === true;
+            
+            // Clear error messages
+            firstNameError.textContent = '';
+            lastNameError.textContent = '';
+            emailError.textContent = '';
+            
+            // Show modal
+            editModal.style.display = 'flex';
+        }
+
+        // Close edit modal
+        function closeEditModal() {
+            editModal.style.display = 'none';
+            currentUser = null;
+        }
+
+        // Validate form
+        function validateForm() {
+            let isValid = true;
+            
+            // Validate first name
+            if (!editFirstName.value.trim()) {
+                firstNameError.textContent = 'First name is required';
+                isValid = false;
+            } else {
+                firstNameError.textContent = '';
+            }
+            
+            // Validate last name
+            if (!editLastName.value.trim()) {
+                lastNameError.textContent = 'Last name is required';
+                isValid = false;
+            } else {
+                lastNameError.textContent = '';
+            }
+            
+            // Validate email
+            if (!editEmail.value.trim()) {
+                emailError.textContent = 'Email is required';
+                isValid = false;
+            } else if (!isValidEmail(editEmail.value)) {
+                emailError.textContent = 'Invalid email format';
+                isValid = false;
+            } else {
+                emailError.textContent = '';
+            }
+            
+            return isValid;
+        }
+
+        // Email validation helper
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // Save user changes
+        async function saveUser() {
+            if (!validateForm()) {
+                return;
+            }
+            
+            try {
+                // Show loading state
+                saveBtn.textContent = 'Saving...';
+                saveBtn.disabled = true;
+                
+                // Create update data object
+                const updateData = {
+                    user_id: currentUser.user_id,
+                    email: editEmail.value.trim(),
+                    first_name: editFirstName.value.trim(),
+                    last_name: editLastName.value.trim(),
+                    roles: editRole.value
+                };
+                
+                console.log('Sending update for user:', updateData);
+                
+                // Send update to server
+                const response = await fetch('http://localhost:3000/api/update-user-account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                // Check response
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error(`Server returned non-JSON response: ${await response.text()}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || `Server error: ${response.status}`);
+                }
+                
+                // Handle suspension separately if it changed
+                if (editSuspended.checked !== currentUser.isSuspended) {
+                    await fetch('http://localhost:3000/api/toggle-suspension', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            user_id: currentUser.user_id,
+                            isSuspended: editSuspended.checked
+                        })
+                    });
+                }
+                
+                // Update user in local array
+                const index = users.findIndex(user => user.user_id === currentUser.user_id);
+                if (index !== -1) {
+                    users[index] = {
+                        ...users[index],
+                        email: editEmail.value,
+                        first_name: editFirstName.value,
+                        last_name: editLastName.value,
+                        roles: editRole.value,
+                        isSuspended: editSuspended.checked
+                    };
+                }
+                
+                // Show success message
+                showStatusMessage('User updated successfully!');
+                
+                // Close modal and refresh view
+                closeEditModal();
+                applyFilters();
+                
+            } catch (error) {
+                console.error('Error updating user:', error);
+                showStatusMessage(`Failed to update user: ${error.message}`, true);
+            } finally {
+                // Reset button state
+                saveBtn.textContent = 'Save Changes';
+                saveBtn.disabled = false;
+            }
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', applyFilters);
+        
+        sortRoleButton.addEventListener('click', function() {
+            sortByRole = !sortByRole;
+            this.textContent = `Sort by Role ${sortByRole ? '↓' : ''}`;
+            renderUsers();
+        });
+        
+        showSuspendedButton.addEventListener('click', function() {
+            showOnlySuspended = !showOnlySuspended;
+            this.textContent = showOnlySuspended ? 'Show All Users' : 'Show Suspended';
+            applyFilters();
+        });
+        
+        cancelBtn.addEventListener('click', closeEditModal);
+        saveBtn.addEventListener('click', saveUser);
+
+        // Close modal if clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target === editModal) {
+                closeEditModal();
+            }
+        });
+
+        // Initial data load
+        fetchUsers();
+    });
+    </script>
+</body>
+</html>

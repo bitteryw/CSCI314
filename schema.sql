@@ -27,6 +27,9 @@ CREATE TABLE IF NOT EXISTS listings (
     );
 
 
+ALTER TABLE user_accounts
+ADD COLUMN isSuspended BOOLEAN NOT NULL DEFAULT false;
+
 
 -- Alter table to make sure all rows are unique
 ALTER TABLE user_accounts ADD CONSTRAINT uc_person UNIQUE(first_name,last_name);

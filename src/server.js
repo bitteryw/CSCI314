@@ -21,7 +21,7 @@ const dbConfig = {
     host: '127.0.0.1',
     port: 3306,
     user: 'root',
-    password: 'password', //please change if needed
+    password: 'Sandman@9139', //please change if needed
     database: 'users'
 };
 
@@ -404,6 +404,72 @@ app.post('/test-post', (req, res) => {
         receivedData: req.body 
     });
 });
+
+
+// Suspension Code
+// Toggle user suspension status endpoint
+app.post('/api/toggle-suspension', async (req, res) => {
+    try {
+        const { user_id, isSuspended } = req.body;
+        
+        // Basic validation
+        if (user_id === undefined || isSuspended === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID and suspension status are required'
+            });
+        }
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Check if user exists
+        const [existingUser] = await connection.execute(
+            'SELECT * FROM user_accounts WHERE user_id = ?',
+            [user_id]
+        );
+        
+        if (existingUser.length === 0) {
+            await connection.end();
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+        
+        // Update user suspension status
+        await connection.execute(
+            'UPDATE user_accounts SET isSuspended = ? WHERE user_id = ?',
+            [isSuspended, user_id]
+        );
+        
+        await connection.end();
+        
+        console.log(`User ${user_id} suspension status updated to: ${isSuspended}`);
+        res.json({
+            success: true,
+            message: `User ${isSuspended ? 'suspended' : 'unsuspended'} successfully`
+        });
+    } catch (error) {
+        console.error('Error in toggle-suspension endpoint:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update suspension status: ' + error.message
+        });
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management System</title>
+    <title>User Administration System</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -120,17 +120,31 @@
         .status-offline {
             background-color: #e74c3c;
         }
+        .suspension-status {
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .suspended {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .active {
+            background-color: #2ecc71;
+            color: white;
+        }
     </style>
 </head>
 <body>
-    <h1>User Management System</h1>
+    <h1>User Administration System</h1>
     
     <div class="container">
-        <h2>Add New User</h2>
+        <h2>Add New Admin User</h2>
         <form id="addUserForm">
             <div>
                 <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required placeholder="user@example.com">
+                <input type="email" id="email" name="email" required placeholder="admin@example.com">
             </div>
             
             <div>
@@ -144,14 +158,14 @@
             </div>
             
             <div>
-                <label for="roles">Role:</label>
-                <select id="roles" name="roles">
-                    <option value="home_owner">Home Owner</option>
-                    <option value="user_admin">User Admin</option>
-                </select>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required placeholder="Enter password">
             </div>
             
-            <button type="submit">Add User</button>
+            <!-- Hidden field for role - always set to user_admin -->
+            <input type="hidden" id="roles" name="roles" value="user_admin">
+            
+            <button type="submit">Add Admin User</button>
         </form>
         <div id="message"></div>
     </div>
@@ -171,6 +185,7 @@
                         <th>First Name</th>
                         <th>Last Name</th>
                         <th>Role</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody">
@@ -216,21 +231,21 @@
             }
         }
         
-        // Handle adding a new user
+        // Handle adding a new user admin
         async function handleAddUser(event) {
             event.preventDefault();
-            result = confirm("Create a new user?")
-            if(result == false){
+            const result = confirm("Create a new admin user?");
+            if (result === false) {
                 return;
-            }else{
-
             }
             
             const formData = {
                 email: document.getElementById('email').value,
                 first_name: document.getElementById('firstName').value,
                 last_name: document.getElementById('lastName').value,
-                roles: document.getElementById('roles').value
+                roles: document.getElementById('roles').value,
+                // Include password in the request
+                password: document.getElementById('password').value
             };
             
             try {
@@ -245,7 +260,7 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    showMessage(`User added successfully with ID: ${result.user_id}`, 'success');
+                    showMessage(`Admin user added successfully with ID: ${result.user_id}`, 'success');
                     addUserForm.reset();
                     fetchUsers(); // Refresh user list
                 } else {
@@ -279,12 +294,15 @@
             usersTableBody.innerHTML = '';
             
             if (users.length === 0) {
-                usersTableBody.innerHTML = '<tr><td colspan="5">No users found</td></tr>';
+                usersTableBody.innerHTML = '<tr><td colspan="6">No users found</td></tr>';
                 return;
             }
             
             users.forEach(user => {
                 const row = document.createElement('tr');
+                const isSuspended = user.isSuspended || false;
+                const statusClass = isSuspended ? 'suspended' : 'active';
+                const statusText = isSuspended ? 'Suspended' : 'Active';
                 
                 row.innerHTML = `
                     <td>${user.user_id}</td>
@@ -292,6 +310,7 @@
                     <td>${user.first_name}</td>
                     <td>${user.last_name}</td>
                     <td>${user.roles || 'home_owner'}</td>
+                    <td><span class="suspension-status ${statusClass}">${statusText}</span></td>
                 `;
                 
                 usersTableBody.appendChild(row);
