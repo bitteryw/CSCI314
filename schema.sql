@@ -14,6 +14,18 @@ CREATE TABLE IF NOT EXISTS user_accounts (
     roles VARCHAR(20) DEFAULT 'home_owner'
     );
 
+-- create the table of listings
+CREATE TABLE IF NOT EXISTS listings (
+    listing_id VARCHAR(20) PRIMARY KEY,
+    title VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    price DECIMAL(10, 2),
+    image_path VARCHAR(255),
+    user_id VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    FOREIGN KEY (user_id) REFERENCES user_accounts(user_id)
+    );
+
 
 
 -- Alter table to make sure all rows are unique
@@ -71,6 +83,16 @@ END WHILE;
 UPDATE user_accounts
 SET roles = 'user_admin'
 WHERE user_id IN ('user01', 'user02', 'user03', 'user04', 'user05');
+
+-- Set the next 5 users to have home_cleaner roles
+UPDATE user_accounts
+SET roles = 'home_cleaner'
+WHERE user_id IN ('user06', 'user07', 'user08', 'user09', 'user10');
+
+-- Set the next 5 users to have platform_manager roles
+UPDATE user_accounts
+SET roles = 'platform_manager'
+WHERE user_id IN ('user11', 'user12', 'user13', 'user14', 'user15');
 
 -- Clean up temporary tables
 DROP TEMPORARY TABLE IF EXISTS first_names;
