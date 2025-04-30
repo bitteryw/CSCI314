@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Login Form</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="untitled.js"></script>
+    <link rel="stylesheet" href="../src/style.css">
+    <script src="../src/index.js"></script>
 </head>
 <body>
 <div class="login-container">
     <h2>Login</h2>
-    <form id="loginForm" onsubmit="return handleLogin(event)">
+    <form id="loginForm">
         <div class="form-group">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" required>
@@ -21,7 +21,6 @@
         </div>
         <button type="submit">Login</button>
     </form>
-    <!-- ADD THIS MESSAGE DIV -->
     <div id="message" style="margin-top: 10px; text-align: center;"></div>
     <div class="forgot-password">
         <a href="#">Forgot Password?</a>

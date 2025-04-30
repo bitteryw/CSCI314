@@ -1,7 +1,29 @@
 // BOUNDARY
 class UserLoginPage {
-    constructor() {
-        // No need to store user data here
+    constructor(loginController) {
+        this.loginController = loginController;
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', this.handleLoginSubmit.bind(this));
+            }
+        });
+    }
+
+    async handleLoginSubmit(event) {
+        event.preventDefault(); // Prevent form submission
+
+        // Get input and pass to controller
+        const credentials = this.getUserInput();
+
+        // Call the controller
+        await this.loginController.processLogin(credentials.username, credentials.password);
+
+        return false; // Prevent form submission
     }
 
     getUserInput() {
@@ -20,37 +42,52 @@ class UserLoginPage {
         document.getElementById("message").textContent = "Log-In Unsuccessful";
         document.getElementById("message").style.color = "red";
     }
+
+    navigateToUserPage() {
+        window.location.href = "user-management.html"; // Change this to your desired page
+    }
 }
 
-// CONTROLLER
+// CONTROLLER - Contains only business logic
 class LoginController {
     constructor() {
         this.authenticator = new AuthenticationService();
-        this.loginPage = new UserLoginPage();
     }
 
     run() {
         console.log("Running User Login");
     }
 
-    async processLogin() {
-        const credentials = this.loginPage.getUserInput();
-        const user = new User(credentials.username, credentials.password);
+    async processLogin(username, password) {
+        this.run();
 
+        // Create user entity
+        const user = new User(username, password);
+
+        // Business logic: authenticate user
         const isAuthenticated = await this.authenticator.authenticate(user);
 
+        // Get reference to boundary
+        const loginPage = this.getLoginPage();
+
+        // Handle result (no UI logic here)
         if (isAuthenticated) {
-            this.loginPage.displaySuccessMsg();
+            loginPage.displaySuccessMsg();
             setTimeout(() => {
-                window.location.href = "dashboard.html"; // Change this to your desired page
+                loginPage.navigateToUserPage();
             }, 1000);
         } else {
-            this.loginPage.displayErrorMsg();
+            loginPage.displayErrorMsg();
         }
+    }
+
+    // Method to get the boundary reference
+    getLoginPage() {
+        return window.loginPage;
     }
 }
 
-// ENTITY
+// ENTITY - Data structure
 class User {
     constructor(username, password) {
         this.username = username;
@@ -66,7 +103,7 @@ class User {
     }
 }
 
-// SERVICE
+// Log-in function
 class AuthenticationService {
     async authenticate(user) {
         try {
@@ -90,32 +127,8 @@ class AuthenticationService {
     }
 }
 
-// Entry point - Updated to handle async authentication
-async function handleLogin(event) {
-    event.preventDefault(); // Prevent form submission
-
-    const loginController = new LoginController();
-    loginController.run();
-    await loginController.processLogin();
-
-    return false; // Prevent form submission
-}
-
-
-// SERVICE (not strictly part of BCE, but necessary)
-// class AuthenticationService {
-//     authenticate(user) {
-//         // In a real system, this would check against a database
-//         return user.getUsername() === "john" && user.getPassword() === "password";
-//     }
-// }
-
-// // Entry point
-// function handleLogin() {
-//     const loginController = new LoginController();
-//     loginController.run();
-//     loginController.processLogin();
-// }
-
-
-
+// Initialize application
+const loginController = new LoginController();
+// Store loginPage in window to allow controller to access it
+// This is a pattern to avoid circular dependencies
+window.loginPage = new UserLoginPage(loginController);
