@@ -134,6 +134,286 @@ app.post('/api/users', async (req, res) => {
     }
 });
 
+// Get all listings
+app.get('/api/listings', async (req, res) => {
+    try {
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        const [rows] = await connection.execute(`
+            SELECT l.*, CONCAT(u.first_name, ' ', u.last_name) as provider_name 
+            FROM listings l
+            JOIN user_accounts u ON l.user_id = u.user_id
+            ORDER BY l.created_at DESC
+        `);
+        await connection.end();
+
+        res.json({
+            success: true,
+            data: rows
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch listings',
+            error: error.message
+        });
+    }
+});
+
+app.get('/api/listings/user/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        const [rows] = await connection.execute(
+            `SELECT l.*, CONCAT(u.first_name, ' ', u.last_name) as provider_name 
+             FROM listings l
+             JOIN user_accounts u ON l.user_id = u.user_id
+             WHERE l.user_id = ?
+             ORDER BY l.created_at DESC`,
+            [userId]
+        );
+        await connection.end();
+
+        res.json({
+            success: true,
+            data: rows
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch user listings',
+            error: error.message
+        });
+    }
+});
+
+// Create a new listing
+app.post('/api/listings', async (req, res) => {
+    try {
+        const { title, description, price, image_path, user_id } = req.body;
+
+        // Validate required fields
+        if (!title || !description || !price || !user_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields'
+            });
+        }
+
+        const connection = await mysql2Promise.createConnection(dbConfig);
+
+        // Check if user exists
+        const [userCheck] = await connection.execute(
+            'SELECT * FROM user_accounts WHERE user_id = ?',
+            [user_id]
+        );
+
+        if (userCheck.length === 0) {
+            await connection.end();
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Check if title already exists
+        const [titleCheck] = await connection.execute(
+            'SELECT * FROM listings WHERE title = ?',
+            [title]
+        );
+
+        if (titleCheck.length > 0) {
+            await connection.end();
+            return res.status(409).json({
+                success: false,
+                message: 'A listing with this title already exists'
+            });
+        }
+
+        // Insert the listing
+        const [result] = await connection.execute(
+            'INSERT INTO listings (title, description, price, image_path, user_id) VALUES (?, ?, ?, ?, ?)',
+            [title, description, price, image_path || null, user_id]
+        );
+
+        // Get user details for the response
+        const [userDetails] = await connection.execute(
+            'SELECT CONCAT(first_name, " ", last_name) as provider_name FROM user_accounts WHERE user_id = ?',
+            [user_id]
+        );
+
+        await connection.end();
+
+        res.status(201).json({
+            success: true,
+            message: 'Listing created successfully',
+            data: {
+                listing_id: result.insertId,
+                title,
+                description,
+                price,
+                image_path,
+                user_id,
+                provider_name: userDetails[0].provider_name,
+                created_at: new Date()
+            }
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create listing',
+            error: error.message
+        });
+    }
+});
+
+// Update a listing
+app.put('/api/listings/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, description, price, image_path, user_id } = req.body;
+
+        // Validate required fields
+        if (!title || !description || !price || !user_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields'
+            });
+        }
+
+        const connection = await mysql2Promise.createConnection(dbConfig);
+
+        // First check if the listing exists and belongs to the user
+        const [existingListing] = await connection.execute(
+            'SELECT * FROM listings WHERE listing_id = ?',
+            [id]
+        );
+
+        if (existingListing.length === 0) {
+            await connection.end();
+            return res.status(404).json({
+                success: false,
+                message: 'Listing not found'
+            });
+        }
+
+        // Verify ownership
+        if (existingListing[0].user_id !== user_id) {
+            await connection.end();
+            return res.status(403).json({
+                success: false,
+                message: 'You can only update your own listings'
+            });
+        }
+
+        // Check if the new title conflicts with another listing
+        if (title !== existingListing[0].title) {
+            const [titleCheck] = await connection.execute(
+                'SELECT * FROM listings WHERE title = ? AND listing_id != ?',
+                [title, id]
+            );
+
+            if (titleCheck.length > 0) {
+                await connection.end();
+                return res.status(409).json({
+                    success: false,
+                    message: 'A listing with this title already exists'
+                });
+            }
+        }
+
+        // Update the listing
+        await connection.execute(
+            'UPDATE listings SET title = ?, description = ?, price = ?, image_path = ? WHERE listing_id = ?',
+            [title, description, price, image_path || null, id]
+        );
+
+        // Get user details for the response
+        const [userDetails] = await connection.execute(
+            'SELECT CONCAT(first_name, " ", last_name) as provider_name FROM user_accounts WHERE user_id = ?',
+            [user_id]
+        );
+
+        await connection.end();
+
+        res.json({
+            success: true,
+            message: 'Listing updated successfully',
+            data: {
+                listing_id: parseInt(id),
+                title,
+                description,
+                price,
+                image_path,
+                user_id,
+                provider_name: userDetails[0].provider_name
+            }
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update listing',
+            error: error.message
+        });
+    }
+});
+
+// Delete a listing
+app.delete('/api/listings/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { user_id } = req.query; // Get the user_id from query param
+
+        const connection = await mysql2Promise.createConnection(dbConfig);
+
+        // First check if the listing exists
+        const [existingListing] = await connection.execute(
+            'SELECT * FROM listings WHERE listing_id = ?',
+            [id]
+        );
+
+        if (existingListing.length === 0) {
+            await connection.end();
+            return res.status(404).json({
+                success: false,
+                message: 'Listing not found'
+            });
+        }
+
+        // Verify ownership if user_id is provided
+        if (user_id && existingListing[0].user_id !== user_id) {
+            await connection.end();
+            return res.status(403).json({
+                success: false,
+                message: 'You can only delete your own listings'
+            });
+        }
+
+        // Delete the listing
+        await connection.execute(
+            'DELETE FROM listings WHERE listing_id = ?',
+            [id]
+        );
+
+        await connection.end();
+
+        res.json({
+            success: true,
+            message: 'Listing deleted successfully'
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete listing',
+            error: error.message
+        });
+    }
+});
+
 
 
 
@@ -361,34 +641,6 @@ app.post('/api/update-user-account', async (req, res) => {
         });
     }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // Add this to your server.js to test if the server is properly handling requests
