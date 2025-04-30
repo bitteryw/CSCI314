@@ -16,17 +16,15 @@ CREATE TABLE IF NOT EXISTS user_accounts (
 
 -- create the table of listings
 CREATE TABLE IF NOT EXISTS listings (
-    listing_id VARCHAR(20) PRIMARY KEY,
+    listing_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(50) NOT NULL UNIQUE,
     description TEXT,
     price DECIMAL(10, 2),
     image_path VARCHAR(255),
     user_id VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user_accounts(user_id)
     );
-
-
 
 -- Alter table to make sure all rows are unique
 ALTER TABLE user_accounts ADD CONSTRAINT uc_person UNIQUE(first_name,last_name);
@@ -53,7 +51,7 @@ INSERT INTO last_names VALUES
                            ('Green'), ('Adams'), ('Nelson'), ('Baker'), ('Hall'), ('Rivera'), ('Campbell'), ('Mitchell'),
                            ('Carter'), ('Roberts'), ('Gomez'), ('Phillips'), ('Evans'), ('Turner'), ('Diaz'), ('Parker');
 
--- Insert 50 records
+-- Insert 50 records in user_accounts
 DROP PROCEDURE IF EXISTS populate_user_accounts;
 DELIMITER //
 CREATE PROCEDURE populate_user_accounts()
