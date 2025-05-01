@@ -414,33 +414,6 @@ app.delete('/api/listings/:id', async (req, res) => {
     }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Make sure this endpoint is properly defined and not nested inside any conditional blocks
 // Place this with your other endpoint definitions
 
