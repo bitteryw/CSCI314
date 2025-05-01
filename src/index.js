@@ -97,6 +97,9 @@ class LoginController {
 
         // Handle result (no UI logic here)
         if (authResult.authenticated) {
+            // Store user role for reference
+            localStorage.setItem('userRole', authResult.userRole);
+
             loginPage.displaySuccessMsg();
             setTimeout(() => {
                 // Navigate based on user_role
@@ -145,13 +148,43 @@ class AuthenticationService {
             });
 
             const data = await response.json();
-            return{
+
+            // If authentication is successful, get user details for proper display
+            if (data.authenticated) {
+                try {
+                    // Store the user_id in localStorage - this is the username we're using in our system
+                    localStorage.setItem('currentUserId', user.getUsername());
+
+                    // Try to get the user's full name from the database
+                    const userResponse = await fetch(`http://localhost:3000/get-homeowners`);
+                    const userData = await userResponse.json();
+
+                    if (userData.success) {
+                        // Find the user in the response
+                        const userDetails = userData.data.find(u => u.user_id === user.getUsername());
+
+                        if (userDetails) {
+                            // Store the user's full name for display
+                            localStorage.setItem('currentUsername', `${userDetails.first_name} ${userDetails.last_name}`);
+                        } else {
+                            // Fallback to user_id if full name not found
+                            localStorage.setItem('currentUsername', user.getUsername());
+                        }
+                    }
+                } catch (error) {
+                    // If there's an error getting user details, just use the user_id
+                    console.error('Error getting user details:', error);
+                    localStorage.setItem('currentUsername', user.getUsername());
+                }
+            }
+
+            return {
                 authenticated: data.authenticated,
                 userRole: data.userRole || 'home_owner' // Default to home_owner if no role is provided
             };
         } catch (error) {
             console.error('Authentication error:', error);
-            return{
+            return {
                 authenticated: false,
                 userRole: null
             };
