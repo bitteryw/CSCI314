@@ -1,0 +1,206 @@
+<html>
+    <head>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: rgb(71, 109, 246);
+            }
+            
+            .login-container {
+                background-color: rgb(71, 109, 246);
+                padding: 20px;
+                width: 400px;
+            }
+            
+            h1 {
+                text-align: center;
+                margin-bottom: 40px;
+                color: white;
+            }
+            
+            .form-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 15px;
+                align-items: center;
+                color: white;
+            }
+            
+            .form-row label {
+                flex: 1;
+            }
+            
+            .form-row input, .form-row select {
+                flex: 1;
+                padding: 3px;
+            }
+            
+            .buttons-container {
+                display: flex;
+                justify-content: flex-end;
+                margin-top: 15px;
+                gap: 10px;
+            }
+            
+            .buttons-container input, .buttons-container a {
+                padding: 5px 20px;
+                cursor: pointer;
+            }
+            
+            .register-button {
+                background-color: #f0f0f0;
+                color: #333;
+                text-decoration: none;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                display: inline-block;
+                font-size: 14px;
+                text-align: center;
+            }
+            
+            #loginiderror, #loginpassworderror {
+                color: red;
+                font-size: 0.8em;
+                margin-top: 5px;
+            }
+
+            #loginStatus {
+                padding: 10px;
+                margin-top: 15px;
+                text-align: center;
+                border-radius: 4px;
+            }
+
+            .error-message {
+                color: red;
+                font-size: 0.8em;
+                margin-top: 5px;
+            }
+
+            .success-message {
+                color: #4caf50;
+                font-size: 0.9em;
+                margin-top: 10px;
+                text-align: center;
+                font-weight: bold;
+            }
+        </style>
+        <script>
+            function validateForm(){
+                var loginid = document.getElementById('loginid').value;
+                var loginpassword = document.getElementById('loginpassword').value;
+
+                if (loginid.trim() == '' || loginid == null){
+                    document.getElementById('loginiderror').innerHTML = "ID cannot be empty";
+                    return false;
+                }
+                else {
+                    document.getElementById('loginiderror').innerHTML = "";
+                    document.getElementById('loginid').value = loginid.trim();
+                }
+
+                if (loginpassword.trim() == '' || loginpassword == null){
+                    document.getElementById('loginpassworderror').innerHTML = "Password cannot be empty";
+                    return false;
+                }
+                else {
+                    document.getElementById('loginpassworderror').innerHTML = "";
+                    document.getElementById('loginpassword').value = loginpassword.trim();
+                }
+                return true;
+            }
+
+            async function submitForm(event) {
+                event.preventDefault();
+                
+                if (!validateForm()) {
+                    return false;
+                }
+
+                const formData = {
+                    username: document.getElementById('loginid').value,
+                    password: document.getElementById('loginpassword').value
+                };
+
+                try {
+                    const response = await fetch('http://localhost:3000/api/authenticate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+                    
+                    const statusDiv = document.getElementById('loginStatus');
+                    
+                    if (data.success && data.authenticated) {
+                        statusDiv.className = 'success-message';
+                        statusDiv.textContent = 'Login successful! Redirecting...';
+                        
+                        // Store user role in session storage
+                        sessionStorage.setItem('userRole', data.userRole);
+                        
+                        // Redirect based on role
+                        setTimeout(() => {
+                            // You can customize this to redirect to different pages based on role
+                            window.location.href = 'testDatabase.html';
+                        }, 1000);
+                    } else {
+                        statusDiv.className = 'error-message';
+                        statusDiv.textContent = 'Invalid username or password. Please try again.';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('loginStatus').className = 'error-message';
+                    document.getElementById('loginStatus').textContent = 'An error occurred. Please try again later.';
+                }
+                
+                return false;
+            }
+        </script>
+    </head>
+    <body>
+        <div class="login-container">
+            <h1>Welcome to login system</h1>
+            
+            <form id="loginForm" onsubmit="return submitForm(event)">
+                <div class="form-row">
+                    <label for="role">Login as:</label>
+                    <select id="role" name="role">
+                        <option value="admin">Admin</option>
+                        <option value="cleaner">Cleaner</option>
+                        <option value="homeowner">Homeowner</option>
+                        <option value="platformmanagement">Platform management</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
+                    <label for="loginid">ID:</label>
+                    <input id="loginid" type="text" name="id">
+                </div>
+                <div id="loginiderror"></div>
+                
+                <div class="form-row">
+                    <label for="loginpassword">Password:</label>
+                    <input id="loginpassword" type="password" name="password">
+                </div>
+                <div id="loginpassworderror"></div>
+                
+                <div class="buttons-container">
+                    <a href="registerpage.html" class="register-button">Register</a>
+                    <input type="submit" value="Login">
+                </div>
+                
+                <div id="loginStatus"></div>
+            </form>
+        </div>
+    </body>
+</html>

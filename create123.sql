@@ -1,0 +1,1 @@
+mysql -u root -p < testing123.sql

@@ -1,0 +1,242 @@
+<html>
+    <head>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: rgb(71, 109, 246);
+            }
+            
+            .register-container {
+                background-color: rgb(71, 109, 246);
+                padding: 20px;
+                width: 400px;
+            }
+            
+            h1 {
+                text-align: center;
+                margin-bottom: 40px;
+                color: white;
+            }
+            
+            .form-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 15px;
+                align-items: center;
+                color: white;
+            }
+            
+            .form-row label {
+                flex: 1;
+            }
+            
+            .form-row input, .form-row select {
+                flex: 1;
+                padding: 3px;
+            }
+            
+            .buttons-container {
+                display: flex;
+                justify-content: flex-end;
+                margin-top: 15px;
+            }
+            
+            .buttons-container input {
+                padding: 5px 20px;
+                cursor: pointer;
+            }
+            
+            .error-message {
+                color: red;
+                font-size: 0.8em;
+                margin-top: 5px;
+            }
+
+            .success-message {
+                color: #4caf50;
+                font-size: 0.9em;
+                margin-top: 10px;
+                text-align: center;
+                font-weight: bold;
+            }
+            
+            .back-link {
+                display: block;
+                text-align: center;
+                margin-top: 20px;
+                color: white;
+                text-decoration: underline;
+            }
+
+            #registrationStatus {
+                padding: 10px;
+                margin-top: 15px;
+                text-align: center;
+                border-radius: 4px;
+            }
+        </style>
+        <script>
+            function validateForm(){
+                var firstname=document.getElementById('first_name').value;
+                var lastname=document.getElementById('last_name').value;
+                var userid=document.getElementById('user_id').value;
+                var email=document.getElementById('email').value;
+                var password=document.getElementById('password').value;
+
+                if (firstname.trim() == '' || firstname == null){
+                    document.getElementById('firstnameerror').innerHTML = "First name cannot be empty";
+                    return false;
+                }
+                else {
+                    document.getElementById('firstnameerror').innerHTML = "";
+                    document.getElementById('first_name').value = firstname.trim();
+                }
+
+                if (lastname.trim() == '' || lastname == null){
+                    document.getElementById('lastnameerror').innerHTML = "Last name cannot be empty";
+                    return false;
+                }
+                else {
+                    document.getElementById('lastnameerror').innerHTML = "";
+                    document.getElementById('last_name').value = lastname.trim();
+                }
+
+                if (userid.trim() == '' || userid == null){
+                    document.getElementById('useriderror').innerHTML = "User ID cannot be empty";
+                    return false;
+                }
+                else {
+                    document.getElementById('useriderror').innerHTML = "";
+                    document.getElementById('user_id').value = userid.trim();
+                }
+
+                if (email.trim() == '' || email == null){
+                    document.getElementById('emailerror').innerHTML = "Email cannot be empty";
+                    return false;
+                }
+                else {
+                    document.getElementById('emailerror').innerHTML = "";
+                    document.getElementById('email').value = email.trim();
+                }
+
+                if (/^[0-9]{6}[a-z]{2}/.test(password)==false){
+                    document.getElementById('passworderror').innerHTML = "Password start with 6 digits and 2 alphabets";
+                    return false;
+                }
+                else {
+                    document.getElementById('passworderror').innerHTML = "";
+                    document.getElementById('password').value = password.trim();
+                }
+                return true;
+            }
+
+            async function submitForm(event) {
+                event.preventDefault();
+                
+                if (!validateForm()) {
+                    return false;
+                }
+
+                const formData = {
+                    first_name: document.getElementById('first_name').value,
+                    last_name: document.getElementById('last_name').value,
+                    user_id: document.getElementById('user_id').value,
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value,
+                    role: document.getElementById('role').value
+                };
+
+                try {
+                    const response = await fetch('http://localhost:3000/api/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+                    
+                    const statusDiv = document.getElementById('registrationStatus');
+                    
+                    if (data.success) {
+                        statusDiv.className = 'success-message';
+                        statusDiv.textContent = 'Registration successful! Redirecting to login page...';
+                        
+                        // Redirect to login page after 2 seconds
+                        setTimeout(() => {
+                            window.location.href = 'loginpage.html';
+                        }, 2000);
+                    } else {
+                        statusDiv.className = 'error-message';
+                        statusDiv.textContent = data.message || 'Registration failed. Please try again.';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('registrationStatus').className = 'error-message';
+                    document.getElementById('registrationStatus').textContent = 'An error occurred. Please try again later.';
+                }
+                
+                return false;
+            }
+        </script>
+    </head>
+    <body>
+        <div class="register-container">
+            <h1>User Registration</h1>
+            <form id="registrationForm" onsubmit="return submitForm(event)">
+                <div class="form-row">
+                    <label for="first_name">First name:</label>
+                    <input type="text" id="first_name" name="first_name">
+                </div>
+                <div class="error-message" id="firstnameerror"></div>
+                
+                <div class="form-row">
+                    <label for="last_name">Last name:</label>
+                    <input type="text" id="last_name" name="last_name">
+                </div>
+                <div class="error-message" id="lastnameerror"></div>
+                
+                <div class="form-row">
+                    <label for="user_id">User ID:</label>
+                    <input type="text" id="user_id" name="user_id">
+                </div>
+                <div class="error-message" id="useriderror"></div>
+                
+                <div class="form-row">
+                    <label for="email">Email:</label>
+                    <input type="text" id="email" name="email">
+                </div>
+                <div class="error-message" id="emailerror"></div>
+                
+                <div class="form-row">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" placeholder="6 digits follow by 2 alphabets">
+                </div>
+                <div class="error-message" id="passworderror"></div>
+                
+                <div class="form-row">
+                    <label for="role">Role:</label>
+                    <select id="role" name="role">
+                        <option value="cleaner">Cleaner</option>
+                        <option value="homeowner">Homeowner</option>
+                        <option value="platformmanagement">Platform management</option>
+                    </select>
+                </div>
+                
+                <div class="buttons-container">
+                    <input type="submit" value="Register">
+                </div>
+                
+                <div id="registrationStatus"></div>
+            </form>
+            <a href="loginpage.html" class="back-link">Back to Login</a>
+        </div>
+    </body>
+</html>

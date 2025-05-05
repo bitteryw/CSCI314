@@ -1,0 +1,231 @@
+<html>
+    <head>
+        <title>User Management Dashboard</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: rgb(71, 109, 246);
+            }
+            
+            .dashboard-container {
+                background-color: rgb(71, 109, 246);
+                padding: 20px;
+                width: 90%;
+                max-width: 800px;
+                margin: 40px auto;
+                color: white;
+            }
+            
+            h1 {
+                margin-bottom: 30px;
+                font-size: 32px;
+            }
+            
+            .search-container {
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+            }
+            
+            .search-container label {
+                font-size: 18px;
+                margin-right: 10px;
+            }
+            
+            .search-container input {
+                padding: 5px;
+                width: 200px;
+            }
+            
+            .search-container button {
+                background-color: white;
+                border: 1px solid #ccc;
+                padding: 5px 10px;
+                cursor: pointer;
+            }
+            
+            .users-table {
+                width: 100%;
+                border-collapse: collapse;
+                background-color: #e0e0e0;
+                color: black;
+            }
+            
+            .users-table th, .users-table td {
+                padding: 10px;
+                text-align: left;
+                border: 1px solid #ccc;
+            }
+            
+            .users-table th {
+                background-color: #d0d0d0;
+            }
+            
+            hr {
+                border: none;
+                height: 1px;
+                background-color: white;
+                margin: 20px 0;
+            }
+            
+            #loading-message {
+                text-align: center;
+                padding: 20px;
+                font-style: italic;
+            }
+            
+            .error-message {
+                background-color: #ffdddd;
+                color: #ff0000;
+                padding: 10px;
+                margin-bottom: 15px;
+                border-radius: 5px;
+                display: none;
+            }
+        </style>
+        <script>
+            // Fetch all users when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                fetchUsers();
+            });
+            
+            // Function to fetch users from the database
+            async function fetchUsers() {
+                const tableBody = document.querySelector('#users-table tbody');
+                const loadingMessage = document.getElementById('loading-message');
+                const errorMessage = document.getElementById('error-message');
+                
+                try {
+                    loadingMessage.style.display = 'block';
+                    tableBody.innerHTML = '';
+                    errorMessage.style.display = 'none';
+                    
+                    // Fetch users from your API
+                    const response = await fetch('/get-all-users');
+                    
+                    // Check if request was successful
+                    if (!response.ok) {
+                        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    const users = result.data || [];
+                    
+                    // Hide loading message
+                    loadingMessage.style.display = 'none';
+                    
+                    // Display users in the table
+                    if (users && users.length > 0) {
+                        users.forEach((user, index) => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>${user.user_id || ''}</td>
+                                <td>${(user.first_name || '') + ' ' + (user.last_name || '')}</td>
+                                <td>${user.email || ''}</td>
+                                <td>${user.roles || ''}</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    } else {
+                        tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center">No users found</td></tr>`;
+                    }
+                } catch (error) {
+                    console.error('Error fetching users:', error);
+                    loadingMessage.style.display = 'none';
+                    errorMessage.textContent = `Failed to load users: ${error.message}`;
+                    errorMessage.style.display = 'block';
+                    tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center">Error loading data</td></tr>`;
+                }
+            }
+            
+            // Function to search users
+            async function searchUsers() {
+                const searchTerm = document.getElementById('username-search').value.trim();
+                const tableBody = document.querySelector('#users-table tbody');
+                const loadingMessage = document.getElementById('loading-message');
+                const errorMessage = document.getElementById('error-message');
+                
+                try {
+                    loadingMessage.style.display = 'block';
+                    tableBody.innerHTML = '';
+                    errorMessage.style.display = 'none';
+                    
+                    // Make API call to search endpoint
+                    const response = await fetch(`/search-users-data?term=${encodeURIComponent(searchTerm)}`);
+                    
+                    // Check if request was successful
+                    if (!response.ok) {
+                        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    const users = result.data || [];
+                    
+                    // Hide loading message
+                    loadingMessage.style.display = 'none';
+                    
+                    // Display filtered users
+                    if (users && users.length > 0) {
+                        users.forEach((user, index) => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>${user.user_id || ''}</td>
+                                <td>${(user.first_name || '') + ' ' + (user.last_name || '')}</td>
+                                <td>${user.email || ''}</td>
+                                <td>${user.roles || ''}</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    } else {
+                        tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center">No users matching "${searchTerm}" found</td></tr>`;
+                    }
+                } catch (error) {
+                    console.error('Error searching users:', error);
+                    loadingMessage.style.display = 'none';
+                    errorMessage.textContent = `Search failed: ${error.message}`;
+                    errorMessage.style.display = 'block';
+                }
+                
+                return false; // Prevent form submission
+            }
+        </script>
+    </head>
+    <body>
+        <div class="dashboard-container">
+            <h1>User management dashboard</h1>
+            
+            <div id="error-message" class="error-message"></div>
+            
+            <form onsubmit="return searchUsers()">
+                <div class="search-container">
+                    <label for="username-search">Username:</label>
+                    <input type="text" id="username-search" name="username">
+                    <button type="submit">Search</button>
+                </div>
+            </form>
+            
+            <hr>
+            
+            <table id="users-table" class="users-table">
+                <thead>
+                    <tr>
+                        <th>NO.</th>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr id="loading-message">
+                        <td colspan="5">Loading users...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </body>
+</html>
