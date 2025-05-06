@@ -21,7 +21,7 @@ const dbConfig = {
     host: '127.0.0.1',
     port: 3306,
     user: 'root',
-    password: 'Sandman@9139', //please change if needed
+    password: 'password', //please change if needed
     database: 'users'
 };
 
@@ -164,14 +164,16 @@ app.get('/api/listings/user/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         const connection = await mysql2Promise.createConnection(dbConfig);
-        const [rows] = await connection.execute(
-            `SELECT l.*, CONCAT(u.first_name, ' ', u.last_name) as provider_name 
-             FROM listings l
-             JOIN user_accounts u ON l.user_id = u.user_id
-             WHERE l.user_id = ?
-             ORDER BY l.created_at DESC`,
-            [userId]
-        );
+        const [rows] = await connection.execute(`
+            SELECT l.*,
+                   l.user_id,
+                   u.first_name,
+                   u.last_name,
+                   CONCAT(u.first_name, ' ', u.last_name) as provider_name
+            FROM listings l
+                     LEFT JOIN user_accounts u ON l.user_id = u.user_id
+            ORDER BY l.created_at DESC
+        `);
         await connection.end();
 
         res.json({
@@ -191,13 +193,13 @@ app.get('/api/listings/user/:userId', async (req, res) => {
 // Create a new listing
 app.post('/api/listings', async (req, res) => {
     try {
-        const { title, description, price, image_path, user_id } = req.body;
+        const { title, description, price, image_path, user_id, category } = req.body;
 
         // Validate required fields
         if (!title || !description || !price || !user_id) {
             return res.status(400).json({
                 success: false,
-                message: 'Missing required fields'
+                message: 'Title, description, price, and user_id are required fields'
             });
         }
 
@@ -231,10 +233,35 @@ app.post('/api/listings', async (req, res) => {
             });
         }
 
+        // Get the next numeric ID
+        const [maxIdResult] = await connection.execute(
+            'SELECT MAX(listing_id) AS max_id FROM listings'
+        );
+
+        let nextId = 1;
+        if (maxIdResult[0].max_id) {
+            nextId = parseInt(maxIdResult[0].max_id) + 1;
+        }
+
+        // Make sure all values are defined (convert undefined to null)
+        const category_name = category || null;
+        const image_path_value = image_path || null;
+
+        // Add this right before the INSERT query
+        console.log('Values being inserted:', {
+            listing_id: nextId,
+            title: title,
+            description: description,
+            price: price,
+            image_path: image_path_value,
+            user_id: user_id,
+            category_name: category_name
+        });
+
         // Insert the listing
-        const [result] = await connection.execute(
-            'INSERT INTO listings (title, description, price, image_path, user_id) VALUES (?, ?, ?, ?, ?)',
-            [title, description, price, image_path || null, user_id]
+        await connection.execute(
+            'INSERT INTO listings (listing_id, title, description, price, image_path, user_id, category_name) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [nextId, title, description, price, image_path_value, user_id, category_name]
         );
 
         // Get user details for the response
@@ -249,18 +276,20 @@ app.post('/api/listings', async (req, res) => {
             success: true,
             message: 'Listing created successfully',
             data: {
-                listing_id: result.insertId,
+                listing_id: nextId,
                 title,
                 description,
                 price,
-                image_path,
+                image_path: image_path_value,
                 user_id,
                 provider_name: userDetails[0].provider_name,
-                created_at: new Date()
+                created_at: new Date(),
+                category_name: category_name
             }
         });
     } catch (error) {
         console.error('Database error:', error);
+        console.error('Error stack:', error.stack);
         res.status(500).json({
             success: false,
             message: 'Failed to create listing',

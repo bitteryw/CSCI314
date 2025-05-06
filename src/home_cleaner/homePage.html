@@ -418,7 +418,6 @@
             <h3>Welcome, <span id="welcome-username">Guest User</span>!</h3>
             <p>Manage your cleaning service listings or browse services from other providers.</p>
         </div>
-        <button class="btn" id="add-service-btn-banner">+ Add New Listing</button>
     </div>
 
     <div class="filter-section">
@@ -440,10 +439,33 @@
     </div>
 </main>
 
+<!-- Service Card Template -->
+<template id="service-card-template">
+    <div class="service-card">
+        <img src="" alt="" class="service-image">
+        <div class="service-info">
+            <h3 class="service-title"></h3>
+            <p class="service-price"></p>
+            <p class="service-description"></p>
+            <div class="service-provider">
+                <span class="provider-name"></span>
+            </div>
+            <div class="card-actions">
+                <div>
+                    <span class="tag"></span>
+                </div>
+                <div class="card-buttons">
+                    <button class="btn card-btn view-details-btn" data-id="">View Details</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
 <!-- Add/Edit Service Modal -->
 <div id="service-modal" class="modal">
     <div class="modal-content">
-        <span class="close-button" id="close-modal">&times;</span>
+        <span class="close-button" id="close-modal" onclick="document.getElementById('service-modal').style.display='none'">&times;</span>
         <h2 id="modal-title">Add New Service</h2>
         <form id="service-form">
             <input type="hidden" id="service-id">
@@ -456,11 +478,11 @@
                 <label class="form-label" for="service-category">Category</label>
                 <select class="form-input" id="service-category" required>
                     <option value="">Select a category</option>
-                    <option value="home">Home Cleaning</option>
-                    <option value="office">Office Cleaning</option>
-                    <option value="carpet">Carpet Cleaning</option>
-                    <option value="windows">Window Cleaning</option>
-                    <option value="deep">Deep Cleaning</option>
+                    <option value="Home Cleaning">Home Cleaning</option>
+                    <option value="Office Cleaning">Office Cleaning</option>
+                    <option value="Carpet Cleaning">Carpet Cleaning</option>
+                    <option value="Window Cleaning">Window Cleaning</option>
+                    <option value="Deep Cleaning">Deep Cleaning</option>
                 </select>
                 <div class="error-message" id="category-error">Please select a category</div>
             </div>
@@ -499,6 +521,67 @@
         </div>
     </div>
 </div>
-<script src="homeCleaner.js"></script>
+<script>
+    // Function to close the modal
+    function closeModal() {
+        document.getElementById('service-modal').style.display = 'none';
+    }
+
+    // Set up all close buttons
+    document.getElementById('cancel-button').onclick = closeModal;
+    document.getElementById('close-delete-modal').onclick = function() {
+        document.getElementById('delete-modal').style.display = 'none';
+    }
+    document.getElementById('cancel-delete-button').onclick = function() {
+        document.getElementById('delete-modal').style.display = 'none';
+    }
+
+    // Function to initialize user information
+    function initUserInfo() {
+        // Get the stored username or use a default
+        const currentUserId = localStorage.getItem('currentUserId') || 'guest';
+        const currentUsername = localStorage.getItem('currentUsername') || 'Guest User';
+
+        console.log('Initializing user info:', { currentUserId, currentUsername });
+
+        // Update all username display elements
+        const usernameElements = [
+            document.getElementById('username-display'),
+            document.getElementById('welcome-username')
+        ];
+
+        usernameElements.forEach(element => {
+            if (element) {
+                element.textContent = currentUsername;
+            }
+        });
+
+        // Set avatar initial (first letter of username)
+        const userAvatar = document.getElementById('user-avatar');
+        if (userAvatar) {
+            userAvatar.textContent = currentUsername.charAt(0).toUpperCase();
+        }
+    }
+
+    // Run initialization when DOM is loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initUserInfo);
+    } else {
+        // DOM is already loaded
+        initUserInfo();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // If no user ID is stored, set a default one for testing
+        if (!localStorage.getItem('currentUserId')) {
+            localStorage.setItem('currentUserId', 'user01');
+        }else {
+            // DOM is already loaded
+            initUserInfo();
+        }
+    });
+</script>
+<script src="homeCleanerBCE.js"></script>
+
 </body>
 </html>

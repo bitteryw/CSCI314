@@ -22,14 +22,14 @@ CREATE TABLE IF NOT EXISTS listings (
     price DECIMAL(10, 2),
     image_path VARCHAR(255),
     user_id VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user_accounts(user_id)
     );
 
 
 
 -- Alter table to make sure all rows are unique
-ALTER TABLE user_accounts ADD CONSTRAINT uc_person UNIQUE(first_name,last_name);
+--ALTER TABLE user_accounts ADD CONSTRAINT uc_person UNIQUE(first_name,last_name);
 
 
 -- Sample first names and last names
@@ -105,3 +105,44 @@ CALL populate_user_accounts();
 
 -- See the results
 SELECT * FROM user_accounts;
+
+
+-- First, drop the foreign key constraint
+ALTER TABLE listings
+DROP FOREIGN KEY fk_category;
+
+-- Then remove the category_code column
+ALTER TABLE listings
+DROP COLUMN category_code;
+
+-- Add a new category_name column
+ALTER TABLE listings
+    ADD COLUMN category_name VARCHAR(50);
+
+-- Add a foreign key constraint referencing the categories table's category_name
+ALTER TABLE listings
+    ADD CONSTRAINT fk_category_name
+        FOREIGN KEY (category_name) REFERENCES categories(category_name)
+            ON DELETE SET NULL;
+
+
+CREATE TABLE IF NOT EXISTS categories (
+    category_code VARCHAR(20) PRIMARY KEY,
+    category_name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+INSERT INTO categories (category_code, category_name, description)
+VALUES
+    ('CAT001', 'Home Cleaning', 'Professional cleaning services for residential properties'),
+    ('CAT002', 'Office Cleaning', 'Commercial cleaning services for office spaces'),
+    ('CAT003', 'Carpet Cleaning', 'Specialized cleaning for carpets and rugs'),
+    ('CAT004', 'Window Cleaning', 'Professional window and glass cleaning services'),
+    ('CAT005', 'Deep Cleaning', 'Thorough cleaning of all surfaces and hard-to-reach areas');
+
+INSERT INTO listings (listing_id, category_code)
+VALUES ('1', 'CAT001');
+
+ALTER TABLE listings
+    MODIFY listing_id INT AUTO_INCREMENT;
