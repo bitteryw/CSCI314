@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Owner Database View</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { margin: 20px 0; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f5f5f5; }
+    </style>
+</head>
+<body>
+<h1>Home Owners Database View</h1>
+<button onclick="fetchHomeOwners()">View All Home Owners</button>
+<div id="status" class="status" style="display: none;"></div>
+<div id="tableContainer"></div>
+
+<script>
+    async function fetchHomeOwners() {
+        const statusDiv = document.getElementById('status');
+        const tableContainer = document.getElementById('tableContainer');
+
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = 'Fetching data...';
+        statusDiv.className = 'status';
+        tableContainer.innerHTML = '';
+
+        try {
+            const response = await fetch('http://localhost:3000/get-homeowners');
+            const data = await response.json();
+
+            if (data.success) {
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `Found ${data.data.length} records`;
+
+                if (data.data.length > 0) {
+                    // Create table
+                    let tableHTML = '<table><thead><tr>';
+
+                    // Get column names from the first record
+                    const columns = Object.keys(data.data[0]);
+
+                    // Add table headers
+                    columns.forEach(column => {
+                        tableHTML += `<th>${column}</th>`;
+                    });
+                    tableHTML += '</tr></thead><tbody>';
+
+                    // Add table rows
+                    data.data.forEach(row => {
+                        tableHTML += '<tr>';
+                        columns.forEach(column => {
+                            tableHTML += `<td>${row[column] || ''}</td>`;
+                        });
+                        tableHTML += '</tr>';
+                    });
+
+                    tableHTML += '</tbody></table>';
+                    tableContainer.innerHTML = tableHTML;
+                } else {
+                    tableContainer.innerHTML = '<p>No records found in the table.</p>';
+                }
+            } else {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `Error: ${data.message}`;
+            }
+        } catch (error) {
+            statusDiv.className = 'status error';
+            statusDiv.innerHTML = `Failed to connect to server: ${error.message}`;
+        }
+    }
+</script>
+</body>
+</html>

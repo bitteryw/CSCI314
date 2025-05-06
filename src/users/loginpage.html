@@ -1,5 +1,8 @@
 <html>
     <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to login system</title>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -9,63 +12,76 @@
                 justify-content: center;
                 align-items: center;
                 height: 100vh;
-                background-color: rgb(71, 109, 246);
+                background-color: #f0f2f5;
             }
             
             .login-container {
-                background-color: rgb(71, 109, 246);
-                padding: 20px;
+                background-color: #ffffff;
+                padding: 30px;
                 width: 400px;
+                border-radius: 8px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             }
             
             h1 {
                 text-align: center;
-                margin-bottom: 40px;
-                color: white;
+                margin-bottom: 25px;
+                color: #333;
+                font-size: 24px;
             }
             
             .form-row {
                 display: flex;
-                justify-content: space-between;
+                flex-direction: column;
                 margin-bottom: 15px;
-                align-items: center;
-                color: white;
             }
             
             .form-row label {
-                flex: 1;
+                margin-bottom: 5px;
+                font-weight: bold;
+                color: #333;
             }
             
             .form-row input, .form-row select {
-                flex: 1;
-                padding: 3px;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-size: 14px;
             }
             
             .buttons-container {
                 display: flex;
-                justify-content: flex-end;
-                margin-top: 15px;
-                gap: 10px;
+                justify-content: space-between;
+                margin-top: 20px;
             }
             
             .buttons-container input, .buttons-container a {
-                padding: 5px 20px;
+                padding: 10px 20px;
                 cursor: pointer;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            
+            .buttons-container input[type="submit"] {
+                background-color: #4267B2;
+                color: white;
+                border: none;
+                width: 100px;
             }
             
             .register-button {
-                background-color: #f0f0f0;
+                background-color: #e4e6eb;
                 color: #333;
                 text-decoration: none;
-                border: 1px solid #ccc;
-                border-radius: 3px;
+                border: none;
                 display: inline-block;
                 font-size: 14px;
                 text-align: center;
+                padding: 10px 15px;
             }
             
             #loginiderror, #loginpassworderror {
-                color: red;
+                color: #f44336;
                 font-size: 0.8em;
                 margin-top: 5px;
             }
@@ -78,13 +94,13 @@
             }
 
             .error-message {
-                color: red;
+                color: #f44336;
                 font-size: 0.8em;
                 margin-top: 5px;
             }
 
             .success-message {
-                color: #4caf50;
+                color: #4CAF50;
                 font-size: 0.9em;
                 margin-top: 10px;
                 text-align: center;

@@ -24,13 +24,13 @@ app.use((req, res, next) => {
 const path = require('path');
 
 // Add this before your other routes
-app.use(express.static(path.join(__dirname, '..', 'public'), {
+app.use(express.static(path.join(__dirname, '..', 'src','users'), {
     index: 'loginpage.html'
 })); // Assuming your HTML files are in a 'public' folder
 
 // Root route to serve login page
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname,'..', 'public', 'loginpage.html'));
+    res.sendFile(path.join(__dirname,'..', 'src','users', 'loginpage.html'));
 });
 //until here---kh
 
