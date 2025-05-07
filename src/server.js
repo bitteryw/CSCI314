@@ -712,21 +712,6 @@ app.post('/api/toggle-suspension', async (req, res) => {
     }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Test endpoint
 app.get('/test', (req, res) => {
     res.json({ message: 'Server is running' });
