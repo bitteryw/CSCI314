@@ -418,6 +418,9 @@
             <h3>Welcome, <span id="welcome-username">Guest User</span>!</h3>
             <p>Manage your cleaning service listings or browse services from other providers.</p>
         </div>
+        <div>
+            <button class="btn" id="my-listings-btn" onclick="window.location.href='cleanerListings.html'">My Listings</button>
+        </div>
     </div>
 
     <div class="filter-section">
@@ -509,18 +512,7 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div id="delete-modal" class="modal">
-    <div class="modal-content">
-        <span class="close-button" id="close-delete-modal">&times;</span>
-        <h2>Confirm Deletion</h2>
-        <p>Are you sure you want to delete this service? This action cannot be undone.</p>
-        <div class="form-actions">
-            <button type="button" class="btn btn-secondary" id="cancel-delete-button">Cancel</button>
-            <button type="button" class="btn" id="confirm-delete-button" style="background-color: #f44336;">Delete</button>
-        </div>
-    </div>
-</div>
+
 <script>
     // Function to close the modal
     function closeModal() {
@@ -529,12 +521,7 @@
 
     // Set up all close buttons
     document.getElementById('cancel-button').onclick = closeModal;
-    document.getElementById('close-delete-modal').onclick = function() {
-        document.getElementById('delete-modal').style.display = 'none';
-    }
-    document.getElementById('cancel-delete-button').onclick = function() {
-        document.getElementById('delete-modal').style.display = 'none';
-    }
+    document.getElementById('close-modal').onclick = closeModal;
 
     // Function to initialize user information
     function initUserInfo() {
@@ -564,21 +551,15 @@
     }
 
     // Run initialization when DOM is loaded
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initUserInfo);
-    } else {
-        // DOM is already loaded
-        initUserInfo();
-    }
-
     document.addEventListener('DOMContentLoaded', function() {
         // If no user ID is stored, set a default one for testing
         if (!localStorage.getItem('currentUserId')) {
             localStorage.setItem('currentUserId', 'user01');
-        }else {
-            // DOM is already loaded
-            initUserInfo();
+            localStorage.setItem('currentUsername', 'Guest User');
         }
+
+        // Initialize the user info regardless
+        initUserInfo();
     });
 </script>
 <script src="homeCleanerBCE.js"></script>

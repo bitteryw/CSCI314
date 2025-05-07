@@ -465,11 +465,6 @@ class AddListingController {
 
     // Create a new service
     async createService(serviceData) {
-        const validation = this.validateServiceData(serviceData);
-        if (!validation.isValid) {
-            return { success: false, errors: validation.errors };
-        }
-
         // Get current user from localStorage
         const currentUsername = localStorage.getItem('currentUsername') || 'Guest User';
 
