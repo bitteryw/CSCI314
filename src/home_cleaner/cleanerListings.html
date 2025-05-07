@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CleanConnect - Cleaning Services Marketplace</title>
+  <style>
+    :root {
+      --primary-color: #ff5722;
+      --secondary-color: #2196f3;
+      --light-gray: #f5f5f5;
+      --dark-gray: #757575;
+      --white: #ffffff;
+      --black: #333333;
+      --shadow: 0 2px 5px rgba(0,0,0,0.1);
+      --radius: 8px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #f8f9fa;
+      color: var(--black);
+      line-height: 1.6;
+    }
+
+    header {
+      background-color: var(--white);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 15px 0;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+
+    .search-container {
+      flex-grow: 1;
+      margin: 0 20px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: var(--radius);
+      font-size: 16px;
+    }
+
+    .search-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--dark-gray);
+      cursor: pointer;
+    }
+
+    .btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #e64a19;
+    }
+
+    .btn-secondary {
+      background-color: var(--secondary-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: #1976d2;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .service-card {
+      display: flex;
+      flex-direction: column;
+      background-color: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: transform 0.3s;
+      height: 100%;
+    }
+
+    .service-card {
+      display: flex;
+      flex-direction: column;
+      background-color: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: transform 0.3s;
+      height: 100%;
+    }
+
+    .service-info {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: auto;
+      padding-top: 10px;
+    }
+
+    .service-image {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
+
+    .service-title {
+      font-size: 18px;
+      margin-bottom: 5px;
+      color: var(--black);
+    }
+
+    .service-price {
+      font-weight: bold;
+      color: var(--primary-color);
+      margin-bottom: 10px;
+    }
+
+    .service-description {
+      color: var(--dark-gray);
+      font-size: 12px;
+      line-height: 1.4;
+      margin-bottom: 15px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      height: 50px;
+    }
+    .service-provider {
+      margin-top: auto;  /* Push to bottom of flex container */
+      padding-top: 10px;
+      border-top: 1px solid var(--light-gray);
+    }
+
+    .provider-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 8px;
+      border: 1px solid var(--light-gray);
+    }
+
+    .provider-name {
+      font-size: 14px;
+      color: var(--dark-gray);
+    }
+
+    .card-btn {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 200;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+      background-color: var(--white);
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: var(--radius);
+      width: 80%;
+      max-width: 600px;
+      box-shadow: var(--shadow);
+      animation: modalopen 0.3s;
+    }
+
+    @keyframes modalopen {
+      from {opacity: 0; transform: translateY(-50px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    .close-button {
+      color: var(--dark-gray);
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close-button:hover {
+      color: var(--black);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: var(--radius);
+      font-size: 16px;
+    }
+
+    .form-textarea {
+      height: 100px;
+      resize: vertical;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .filter-section {
+      background-color: var(--white);
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .filter-title {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .filter-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .filter-chip {
+      background-color: var(--light-gray);
+      border-radius: 20px;
+      padding: 5px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .filter-chip:hover, .filter-chip.active {
+      background-color: var(--primary-color);
+      color: var(--white);
+    }
+
+    .section-title {
+      font-size: 24px;
+      margin: 30px 0 15px;
+      color: var(--black);
+    }
+
+    .tag {
+      display: inline-block;
+      background-color: var(--light-gray);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-right: 5px;
+      color: var(--dark-gray);
+    }
+
+    .error-message {
+      color: red;
+      font-size: 14px;
+      margin-top: 5px;
+      display: none;
+    }
+
+    /* User info in header */
+    .user-info {
+      display: flex;
+      align-items: center;
+      margin-left: 15px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .user-name {
+      font-weight: 500;
+    }
+
+    .welcome-banner {
+      background-color: var(--white);
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Responsive adjustments */
+    @media screen and (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+      }
+
+      .search-container {
+        margin: 15px 0;
+        width: 100%;
+      }
+
+      .services-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      }
+
+      .modal-content {
+        width: 95%;
+        margin: 5% auto;
+      }
+
+      .welcome-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="container">
+    <div class="header-content">
+      <a href="homePage.html" class="logo">CleanConnect</a>
+      <div class="search-container">
+        <input type="text" class="search-input" id="search-input" placeholder="Search my cleaning services...">
+        <button class="search-btn" id="search-btn">🔍</button>
+      </div>
+      <div style="display: flex; align-items: center;">
+        <button class="btn" id="add-service-btn">+ Add Listing</button>
+        <div class="user-info">
+          <div class="user-avatar" id="user-avatar"></div>
+          <span class="user-name" id="username-display">Guest User</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="welcome-banner">
+    <div>
+      <h3>Welcome, <span id="welcome-username">Guest User</span>!</h3>
+      <p>Manage your cleaning service listings here.</p>
+    </div>
+    <div>
+      <button class="btn" id="my-listings-btn" onclick="window.location.href='cleanerListings.html'">My Listings</button>
+    </div>
+  </div>
+
+  <div class="filter-section">
+    <h3 class="filter-title">Filter Services</h3>
+    <div class="filter-options">
+      <div class="filter-chip active" data-filter="all">All Services</div>
+      <div class="filter-chip" data-filter="home">Home Cleaning</div>
+      <div class="filter-chip" data-filter="office">Office Cleaning</div>
+      <div class="filter-chip" data-filter="carpet">Carpet Cleaning</div>
+      <div class="filter-chip" data-filter="windows">Window Cleaning</div>
+      <div class="filter-chip" data-filter="deep">Deep Cleaning</div>
+    </div>
+  </div>
+
+  <h2 class="section-title">My Cleaning Services</h2>
+
+  <div class="services-grid" id="services-container">
+    <!-- Services will be dynamically generated here -->
+  </div>
+</main>
+
+<!-- Service Card Template -->
+<template id="service-card-template">
+  <div class="service-card">
+    <img src="" alt="" class="service-image">
+    <div class="service-info">
+      <h3 class="service-title"></h3>
+      <p class="service-price"></p>
+      <p class="service-description"></p>
+      <div class="service-provider">
+        <span class="provider-name"></span>
+      </div>
+      <div class="card-actions">
+        <div>
+          <span class="tag"></span>
+        </div>
+        <div class="card-buttons">
+          <button class="btn card-btn view-details-btn" data-id="">View Details</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Add/Edit Service Modal -->
+<div id="service-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-button" id="close-modal" onclick="document.getElementById('service-modal').style.display='none'">&times;</span>
+    <h2 id="modal-title">Add New Service</h2>
+    <form id="service-form">
+      <input type="hidden" id="service-id">
+      <div class="form-group">
+        <label class="form-label" for="service-title">Service Title</label>
+        <input type="text" class="form-input" id="service-title" required>
+        <div class="error-message" id="title-error">Please enter a valid title</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="service-category">Category</label>
+        <select class="form-input" id="service-category" required>
+          <option value="">Select a category</option>
+          <option value="Home Cleaning">Home Cleaning</option>
+          <option value="Office Cleaning">Office Cleaning</option>
+          <option value="Carpet Cleaning">Carpet Cleaning</option>
+          <option value="Window Cleaning">Window Cleaning</option>
+          <option value="Deep Cleaning">Deep Cleaning</option>
+        </select>
+        <div class="error-message" id="category-error">Please select a category</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="service-price">Price (SGD)</label>
+        <input type="number" class="form-input" id="service-price" min="1" step="0.01" required>
+        <div class="error-message" id="price-error">Please enter a valid price</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="service-description">Description</label>
+        <textarea class="form-textarea" id="service-description" required></textarea>
+        <div class="error-message" id="description-error">Please enter a description</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="service-image">Image URL</label>
+        <input type="text" class="form-input" id="service-image" placeholder="https://example.com/image.jpg">
+        <div class="error-message" id="image-error">Please enter a valid URL</div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" id="cancel-button">Cancel</button>
+        <button type="submit" class="btn" id="save-button">Save Service</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<script>
+  // Function to close the modal
+  function closeModal() {
+    document.getElementById('service-modal').style.display = 'none';
+  }
+
+  // Set up all close buttons
+  document.getElementById('cancel-button').onclick = closeModal;
+  document.getElementById('close-modal').onclick = closeModal;
+
+  // Function to initialize user information
+  function initUserInfo() {
+    // Get the stored username or use a default
+    const currentUserId = localStorage.getItem('currentUserId') || 'guest';
+    const currentUsername = localStorage.getItem('currentUsername') || 'Guest User';
+
+    console.log('Initializing user info:', { currentUserId, currentUsername });
+
+    // Update all username display elements
+    const usernameElements = [
+      document.getElementById('username-display'),
+      document.getElementById('welcome-username')
+    ];
+
+    usernameElements.forEach(element => {
+      if (element) {
+        element.textContent = currentUsername;
+      }
+    });
+
+    // Set avatar initial (first letter of username)
+    const userAvatar = document.getElementById('user-avatar');
+    if (userAvatar) {
+      userAvatar.textContent = currentUsername.charAt(0).toUpperCase();
+    }
+  }
+
+  // Run initialization when DOM is loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    // If no user ID is stored, set a default one for testing
+    if (!localStorage.getItem('currentUserId')) {
+      localStorage.setItem('currentUserId', 'user01');
+      localStorage.setItem('currentUsername', 'Guest User');
+    }
+
+    // Initialize the user info regardless
+    initUserInfo();
+  });
+</script>
+<script src="homeCleanerBCE.js"></script>
+
+</body>
+</html>
