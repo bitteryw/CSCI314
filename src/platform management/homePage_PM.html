@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanConnect - Category Management</title>
+    <style>
+        :root {
+            --primary-color: #ff5722;
+            --secondary-color: #2196f3;
+            --light-gray: #f5f5f5;
+            --dark-gray: #757575;
+            --white: #ffffff;
+            --black: #333333;
+            --shadow: 0 2px 5px rgba(0,0,0,0.1);
+            --radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: var(--black);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--white);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 15px 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .search-container {
+            flex-grow: 1;
+            margin: 0 20px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--radius);
+            font-size: 16px;
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--dark-gray);
+            cursor: pointer;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #e64a19;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #1976d2;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 200;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: var(--radius);
+            width: 80%;
+            max-width: 600px;
+            box-shadow: var(--shadow);
+            animation: modalopen 0.3s;
+        }
+
+        @keyframes modalopen {
+            from {opacity: 0; transform: translateY(-50px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+
+        .close-button {
+            color: var(--dark-gray);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-button:hover {
+            color: var(--black);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: var(--radius);
+            font-size: 16px;
+        }
+
+        .form-textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .section-title {
+            font-size: 24px;
+            margin: 30px 0 15px;
+            color: var(--black);
+        }
+
+        .management-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .management-title {
+            font-size: 28px;
+            color: var(--black);
+        }
+
+        .categories-table {
+            width: 100%;
+            background-color: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .categories-table th,
+        .categories-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .categories-table th {
+            background-color: #f1f1f1;
+            font-weight: bold;
+            color: var(--black);
+        }
+
+        .categories-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .categories-table tr:hover {
+            background-color: rgba(33, 150, 243, 0.05);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .edit-btn, .delete-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
+        }
+
+        .edit-btn {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background-color: #45a049;
+        }
+
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .welcome-section {
+            background-color: var(--white);
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading-spinner::after {
+            content: "";
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {transform: rotate(360deg);}
+        }
+
+        .error-container {
+            background-color: #ffebee;
+            border: 1px solid #f44336;
+            border-radius: var(--radius);
+            padding: 15px;
+            margin: 20px 0;
+            color: #d32f2f;
+            display: none;
+        }
+
+        /* Responsive adjustments */
+        @media screen and (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+            }
+
+            .search-container {
+                margin: 15px 0;
+                width: 100%;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+            }
+
+            .categories-table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .management-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="#" class="logo">CleanConnect</a>
+                <div class="search-container">
+                    <input type="text" class="search-input" id="search-input" placeholder="Search for categories...">
+                    <button class="search-btn" id="search-btn">🔍</button>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <button class="btn" id="add-category-btn">+ Add Category</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="welcome-section">
+            <h2>Category Management Portal</h2>
+            <p>Manage service categories to help users find the right cleaning services. Add, edit, or remove categories as needed.</p>
+        </div>
+
+        <div id="error-container" class="error-container"></div>
+
+        <div class="management-header">
+            <h1 class="management-title">Service Categories</h1>
+            <div>
+                <button class="btn" id="add-category-btn-main">+ Add New Category</button>
+            </div>
+        </div>
+
+        <div id="loading-spinner" class="loading-spinner"></div>
+
+        <table class="categories-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Category Name</th>
+                    <th>Description</th>
+                    <th>Services Count</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="categories-container">
+                <!-- Categories will be dynamically generated here -->
+            </tbody>
+        </table>
+    </main>
+
+    <!-- Add/Edit Category Modal -->
+    <div id="category-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-modal">&times;</span>
+            <h2 id="modal-title">Add New Category</h2>
+            <form id="category-form">
+                <input type="hidden" id="category-id">
+                <div class="form-group">
+                    <label class="form-label" for="category-name">Category Name</label>
+                    <input type="text" class="form-input" id="category-name" required>
+                    <div class="error-message" id="name-error">Please enter a valid category name</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="category-description">Description</label>
+                    <textarea class="form-textarea" id="category-description" required></textarea>
+                    <div class="error-message" id="description-error">Please enter a description</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="category-status">Status</label>
+                    <select class="form-input" id="category-status" required>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="category-icon">Icon (Emoji or URL)</label>
+                    <input type="text" class="form-input" id="category-icon" placeholder="🧹 or https://example.com/icon.png">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-button">Cancel</button>
+                    <button type="submit" class="btn" id="save-button">Save Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-delete-modal">&times;</span>
+            <h2>Confirm Deletion</h2>
+            <p>Are you sure you want to delete this category? This action cannot be undone.</p>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="cancel-delete-button">Cancel</button>
+                <button type="button" class="btn" id="confirm-delete-button" style="background-color: #f44336;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API URLs - Update these to match your server endpoints
+        const API_BASE_URL = 'http://localhost:3000';
+        const API_ENDPOINTS = {
+            GET_CATEGORIES: `${API_BASE_URL}/api/categories`,
+            CREATE_CATEGORY: `${API_BASE_URL}/api/categories`,
+            UPDATE_CATEGORY: `${API_BASE_URL}/api/categories`, // Will append /:id in the function
+            DELETE_CATEGORY: `${API_BASE_URL}/api/categories`, // Will append /:id in the function
+            SEARCH_CATEGORIES: `${API_BASE_URL}/api/categories/search`
+        };
+
+        // DOM elements
+        const categoriesContainer = document.getElementById('categories-container');
+        const categoryModal = document.getElementById('category-modal');
+        const deleteModal = document.getElementById('delete-modal');
+        const categoryForm = document.getElementById('category-form');
+        const modalTitle = document.getElementById('modal-title');
+        const categoryIdInput = document.getElementById('category-id');
+        const categoryNameInput = document.getElementById('category-name');
+        const categoryDescriptionInput = document.getElementById('category-description');
+        const categoryStatusInput = document.getElementById('category-status');
+        const categoryIconInput = document.getElementById('category-icon');
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const addCategoryBtn = document.getElementById('add-category-btn');
+        const addCategoryBtnMain = document.getElementById('add-category-btn-main');
+        const closeModal = document.getElementById('close-modal');
+        const cancelButton = document.getElementById('cancel-button');
+        const closeDeleteModal = document.getElementById('close-delete-modal');
+        const cancelDeleteButton = document.getElementById('cancel-delete-button');
+        const confirmDeleteButton = document.getElementById('confirm-delete-button');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const errorContainer = document.getElementById('error-container');
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCategories();
+            setupEventListeners();
+        });
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Add category buttons
+            addCategoryBtn.addEventListener('click', showAddCategoryModal);
+            addCategoryBtnMain.addEventListener('click', showAddCategoryModal);
+            
+            // Modal close buttons
+            closeModal.addEventListener('click', hideModal);
+            cancelButton.addEventListener('click', hideModal);
+            closeDeleteModal.addEventListener('click', hideDeleteModal);
+            cancelDeleteButton.addEventListener('click', hideDeleteModal);
+            
+            // Form submission
+            categoryForm.addEventListener('submit', saveCategory);
+            
+            // Search functionality
+            searchBtn.addEventListener('click', searchCategories);
+            searchInput.addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    searchCategories();
+                }
+            });
+            
+            // Delete confirmation
+            confirmDeleteButton.addEventListener('click', deleteCategory);
+        }
+
+        // Show loading spinner
+        function showLoading() {
+            loadingSpinner.style.display = 'block';
+        }
+
+        // Hide loading spinner
+        function hideLoading() {
+            loadingSpinner.style.display = 'none';
+        }
+
+        // Show error message
+        function showError(message) {
+            errorContainer.textContent = message;
+            errorContainer.style.display = 'block';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                errorContainer.style.display = 'none';
+            }, 5000);
+        }
+
+        // Load all categories from the API
+        async function loadCategories() {
+            showLoading();
+            
+            try {
+                const response = await fetch(API_ENDPOINTS.GET_CATEGORIES);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load categories: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderCategories(data.categories);
+                } else {
+                    throw new Error(data.message || 'Failed to load categories');
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                showError(`Error loading categories: ${error.message}`);
+                
+                // Render empty state
+                renderCategories([]);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Update the renderCategories function to properly display icons
+function renderCategories(categoriesToRender) {
+    categoriesContainer.innerHTML = '';
+    
+    if (!categoriesToRender || categoriesToRender.length === 0) {
+        categoriesContainer.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 20px;">
+                    No categories found. Add a new category to get started.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    categoriesToRender.forEach(category => {
+        const row = document.createElement('tr');
+        
+        // Determine how to display the icon
+        let iconDisplay;
+        if (!category.icon) {
+            iconDisplay = '📋'; // Default icon
+        } else if (category.icon.startsWith('http')) {
+            // It's a URL, display as image
+            iconDisplay = `<img src="${category.icon}" alt="${category.name} icon" style="width: 24px; height: 24px; object-fit: contain;">`;
+        } else {
+            // It's probably an emoji
+            iconDisplay = category.icon;
+        }
+        
+        row.innerHTML = `
+            <td>${category.id}</td>
+            <td>
+                <div style="display: flex; align-items: center;">
+                    <span style="font-size: 20px; margin-right: 8px;">${iconDisplay}</span>
+                    ${category.name}
+                </div>
+            </td>
+            <td>${category.description}</td>
+            <td>${category.services_count || 0}</td>
+            <td>
+                <span class="badge" style="background-color: ${category.status === 'active' ? '#4caf50' : '#f44336'}">
+                    ${category.status.charAt(0).toUpperCase() + category.status.slice(1)}
+                </span>
+            </td>
+            <td>
+                <div class="action-buttons">
+                    <button class="edit-btn" data-id="${category.id}">Edit</button>
+                    <button class="delete-btn" data-id="${category.id}">Delete</button>
+                </div>
+            </td>
+        `;
+        categoriesContainer.appendChild(row);
+    });
+
+    // Add event listeners to action buttons
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const categoryId = parseInt(this.getAttribute('data-id'));
+            editCategory(categoryId);
+        });
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const categoryId = parseInt(this.getAttribute('data-id'));
+            showDeleteConfirmation(categoryId);
+        });
+    });
+}
+
+        // Show modal for adding a new category
+        function showAddCategoryModal() {
+            modalTitle.textContent = 'Add New Category';
+            categoryIdInput.value = '';
+            categoryForm.reset();
+            categoryModal.style.display = 'block';
+        }
+
+        // Show modal for editing a category
+        async function editCategory(categoryId) {
+            showLoading();
+            
+            try {
+                const response = await fetch(`${API_ENDPOINTS.GET_CATEGORIES}/${categoryId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load category: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.category) {
+                    const category = data.category;
+                    modalTitle.textContent = 'Edit Category';
+                    categoryIdInput.value = category.id;
+                    categoryNameInput.value = category.name;
+                    categoryDescriptionInput.value = category.description;
+                    categoryStatusInput.value = category.status;
+                    categoryIconInput.value = category.icon || '';
+                    categoryModal.style.display = 'block';
+                } else {
+                    throw new Error(data.message || 'Failed to load category');
+                }
+            } catch (error) {
+                console.error('Error loading category for edit:', error);
+                showError(`Error loading category: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Hide the category modal
+        function hideModal() {
+            categoryModal.style.display = 'none';
+            clearValidationErrors();
+        }
+
+        // Hide the delete modal
+        function hideDeleteModal() {
+            deleteModal.style.display = 'none';
+        }
+
+        // Clear validation errors
+        function clearValidationErrors() {
+            document.querySelectorAll('.error-message').forEach(errorMsg => {
+                errorMsg.style.display = 'none';
+            });
+        }
+
+        // Validate the category form
+        function validateCategoryForm() {
+            let isValid = true;
+            
+            // Validate name
+            if (!categoryNameInput.value.trim()) {
+                document.getElementById('name-error').style.display = 'block';
+                isValid = false;
+            } else {
+                document.getElementById('name-error').style.display = 'none';
+            }
+            
+            // Validate description
+            if (!categoryDescriptionInput.value.trim()) {
+                document.getElementById('description-error').style.display = 'block';
+                isValid = false;
+            } else {
+                document.getElementById('description-error').style.display = 'none';
+            }
+            
+            return isValid;
+        }
+
+        // Update the saveCategory function to better handle image URLs
+async function saveCategory(event) {
+    event.preventDefault();
+    
+    // Validate form
+    if (!validateCategoryForm()) {
+        return;
+    }
+    
+    const categoryId = categoryIdInput.value ? parseInt(categoryIdInput.value) : null;
+    const iconValue = categoryIconInput.value.trim();
+    
+    // Create the category data object
+    const categoryData = {
+        name: categoryNameInput.value.trim(),
+        description: categoryDescriptionInput.value.trim(),
+        status: categoryStatusInput.value,
+        icon: iconValue || '📋'
+    };
+    
+    // Log the data being sent
+    console.log('Saving category with data:', categoryData);
+    
+    showLoading();
+    
+    try {
+        let url, method;
+        
+        if (categoryId) {
+            // Update existing category
+            url = `${API_ENDPOINTS.UPDATE_CATEGORY}/${categoryId}`;
+            method = 'PUT';
+        } else {
+            // Add new category
+            url = API_ENDPOINTS.CREATE_CATEGORY;
+            method = 'POST';
+        }
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(categoryData)
+        });
+        
+        const responseData = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(responseData.message || `Failed to save category: ${response.status}`);
+        }
+        
+        if (responseData.success) {
+            // Re-load all categories to refresh the table
+            await loadCategories();
+            hideModal();
+            showNotification(categoryId ? 'Category updated successfully!' : 'Category added successfully!');
+        } else {
+            throw new Error(responseData.message || 'Failed to save category');
+        }
+    } catch (error) {
+        console.error('Error saving category:', error);
+        showError(`Error saving category: ${error.message}`);
+    } finally {
+        hideLoading();
+    }
+}
+
+        // Show delete confirmation modal
+        function showDeleteConfirmation(categoryId) {
+            confirmDeleteButton.setAttribute('data-id', categoryId);
+            deleteModal.style.display = 'block';
+        }
+
+        // Delete a category
+        async function deleteCategory() {
+            const categoryId = parseInt(confirmDeleteButton.getAttribute('data-id'));
+            
+            showLoading();
+            hideDeleteModal();
+            
+            try {
+                const response = await fetch(`${API_ENDPOINTS.DELETE_CATEGORY}/${categoryId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to delete category: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Re-load all categories to refresh the table
+                    await loadCategories();
+                    showNotification('Category deleted successfully!');
+                } else {
+                    throw new Error(data.message || 'Failed to delete category');
+                }
+            } catch (error) {
+                console.error('Error deleting category:', error);
+                showError(`Error deleting category: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Search categories
+        async function searchCategories() {
+            const searchTerm = searchInput.value.trim();
+            
+            if (!searchTerm) {
+                // If search is empty, load all categories
+                loadCategories();
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                // You can either implement a dedicated search endpoint or filter on the client side
+                // Here we'll use the search endpoint
+                const response = await fetch(`${API_ENDPOINTS.SEARCH_CATEGORIES}?term=${encodeURIComponent(searchTerm)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Search failed: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderCategories(data.categories);
+                } else {
+                    throw new Error(data.message || 'Search failed');
+                }
+            } catch (error) {
+                console.error('Error searching categories:', error);
+                showError(`Error searching categories: ${error.message}`);
+                
+                // If search fails, fall back to all categories
+                loadCategories();
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Show notification
+        function showNotification(message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.position = 'fixed';
+            notification.style.bottom = '20px';
+            notification.style.right = '20px';
+            notification.style.backgroundColor = '#4caf50';
+            notification.style.color = 'white';
+            notification.style.padding = '12px 20px';
+            notification.style.borderRadius = '4px';
+            notification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+            notification.style.zIndex = '1000';
+            
+            // Add to document
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.5s';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 500);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
