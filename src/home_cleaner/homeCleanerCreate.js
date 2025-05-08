@@ -141,7 +141,7 @@ class Service{
             const result = await response.json();
             console.log('API response:', result);
 
-            //can return boolean instead if neededd
+            //can return boolean instead if needed
             if (result.success) {
                 console.log('Successfully created new listing');
                 await this.readCleaningService();
