@@ -37,9 +37,11 @@ class createServiceUI {
     handleFormSubmit(event) {
         event.preventDefault();
 
+        const serviceId = document.getElementById('service-id').value;
+
         // Collect data from service form
         const serviceData = {
-            id: document.getElementById('service-id').value || null,
+            listing_id: serviceId || null,
             title: document.getElementById('service-title').value.trim(),
             category: document.getElementById('service-category').value,
             price: parseFloat(document.getElementById('service-price').value),
@@ -49,6 +51,21 @@ class createServiceUI {
             providerName: this.currentUsername,
             createdAt: new Date().toISOString()
         };
+        if (serviceId) {
+        console.log('Updating existing service with ID:', serviceId);
+        // If service ID exists, we're updating
+        this.controller.updateServiceController(serviceData)
+            .then(result => {
+                if (result && result.success) {
+                    console.log('Service updated successfully');
+                    // Reload the page after successful update
+                    window.location.reload();
+                } else {
+                    console.error('Failed to update service:', result?.error);
+                    this.displayUpdateFailed();
+                }
+            });
+    }
 
         // Pass data to controller, if succeeds, reload the window
         this.controller.createCleaningServiceController(serviceData)
@@ -79,36 +96,29 @@ class createServiceController {
     }
 
     async createCleaningServiceController(serviceData){
-        const apiData = {
-            title: serviceData.title || null,
-            description: serviceData.description || null,
-            price: serviceData.price || null,
-            image_path: serviceData.imageUrl || null,
-            user_id: serviceData.providerId || localStorage.getItem('currentUserId') || 'user01',
-            category: serviceData.category || null
-        };
 
-        if (!this.validateServiceData(apiData)) {
-            return { success: false, error: "Invalid service data" };
-        }
+
+        // if (!this.validateServiceData(apiData)) {
+        //     return { success: false, error: "Invalid service data" };
+        // }
         // Pass prepared data to entity layer
         return this.entity.createCleaningService(serviceData);
     }
 
     // Business logic: Validate service data
-    validateServiceData(data) {
-        // Check required fields
-        if (!data.title || !data.price || !data.category) {
-            return false;
-        }
-
-        // Price must be a positive number
-        if (isNaN(data.price) || data.price <= 0) {
-            return false;
-        }
-
-        return true;
-    }
+    // validateServiceData(data) {
+    //     // Check required fields
+    //     if (!data.title || !data.price || !data.category) {
+    //         return false;
+    //     }
+    //
+    //     // Price must be a positive number
+    //     if (isNaN(data.price) || data.price <= 0) {
+    //         return false;
+    //     }
+    //
+    //     return true;
+    // }
 }
 
 
@@ -307,23 +317,45 @@ class readServiceController {
         }
     }
 
-    // Get a specific service by ID
     async getServiceByIdController(serviceId) {
-        // In a fully implemented version, there would be a getServiceById method in the entity
-        // For now, we'll get all services and filter by ID
-        const result = await this.entity.readCleaningService();
+    console.log('Looking for service with ID:', serviceId);
 
-        if (result.success) {
-            const service = result.data.find(s => s.id === serviceId);
-            if (service) {
-                return { success: true, data: service };
-            } else {
-                return { success: false, error: 'Service not found' };
-            }
+    // Get all services
+    const result = await this.entity.readCleaningService();
+
+    if (result.success) {
+        console.log('Total services loaded:', result.data.length);
+
+        // Log the first few services to see their structure
+        console.log('Sample services (first 2):', result.data.slice(0, 2));
+
+        // Try to find the service with various ID formats
+        const service = result.data.find(s => {
+            // Try different ID properties and different comparison methods
+            return (
+                (s.listing_id && s.listing_id.toString() === serviceId.toString()) ||
+                (s.id && s.id.toString() === serviceId.toString()) ||
+                (s._id && s._id.toString() === serviceId.toString())
+            );
+        });
+
+        if (service) {
+            console.log('Service found:', service);
+            return { success: true, data: service };
         } else {
-            return { success: false, error: result.error };
+            console.error('No service found with ID:', serviceId);
+            // Let's log all IDs to help debug
+            console.log('Available IDs in data:', result.data.map(s => ({
+                listing_id: s.listing_id,
+                id: s.id,
+                _id: s._id
+            })));
+            return { success: false, error: 'Service not found' };
         }
+    } else {
+        return { success: false, error: result.error };
     }
+}
 
     // Map category to filter value
     getCategoryFilter(category) {
@@ -386,7 +418,7 @@ class readServiceController {
     // Prepare raw service data into a standardized format for display
     prepareServiceForDisplay(service) {
         return {
-            id: service.id || service.listing_id || '0',
+            id: service.listing_id || '0',
             title: service.title || 'Unnamed Service',
             description: service.description || 'No description available',
             formattedPrice: this.formatPrice(service.price),
@@ -406,8 +438,11 @@ class readServiceController {
 //Boundary for the updating of user listings
 class serviceManagementUI{
     constructor() {
+        this.controller = new serviceManagementController();
         // Check if we're on the user listings page
         const isUserListingsPage = window.location.pathname.includes('cleanerListings.html');
+        this.initDomElements();
+        this.setupManagementEventListeners();
 
         if (isUserListingsPage) {
             // For the cleaner listings page, display only listings that the user made
@@ -429,46 +464,107 @@ class serviceManagementUI{
         servicePage.displayUserListings();
     }
 
+    initDomElements() {
+        this.addServiceBtn = document.getElementById('add-service-btn');
+        this.serviceForm = document.getElementById('service-form');
+        if (this.serviceForm) {
+            this.serviceForm.addEventListener('submit', (event) => this.handleFormSubmit(event));
+        }
+    }
+
     //Event Listener for Edit button
     setupManagementEventListeners() {
         document.addEventListener('click', event => {
-            if (event.target.classList.contains('edit-service-btn')) {
-                const serviceId = event.target.getAttribute('data-id');
-                this.openEditForm(serviceId);
-            }
-        });
+        if (event.target.classList.contains('edit-service-btn')) {
+        console.log('Edit button clicked!');
+        const serviceId = event.target.getAttribute('data-id');
+        console.log('Service ID:', serviceId);
+        this.openEditForm(serviceId);
     }
+
+});}
 
     async openEditForm(serviceId) {
-        try {
-            // Get the service data from the controller
-            const controller = new readServiceController();
-            const result = await controller.getServiceByIdController(serviceId);
+    try {
+        console.log('Opening edit form for service ID:', serviceId);
 
-            if (!result.success) {
-                console.error('Failed to load service data:', result.error);
-                return;
-            }
+        // Get the service data from the controller
+        const controller = new readServiceController();
+        const result = await controller.getServiceByIdController(serviceId);
 
-            const service = result.data;
-
-            // Set form title for editing
-            document.getElementById('modal-title').textContent = 'Edit Service';
-
-            // Populate the form fields
-            document.getElementById('service-id').value = service.id;
-            document.getElementById('service-title').value = service.title;
-            document.getElementById('service-category').value = service.category;
-            document.getElementById('service-price').value = service.price;
-            document.getElementById('service-description').value = service.description;
-            document.getElementById('service-image').value = service.image_path || '';
-
-            // Show the form
-            document.getElementById('service-modal').style.display = 'block';
-        } catch (error) {
-            console.error('Error opening edit form:', error);
+        if (!result.success) {
+            console.error('Failed to load service data:', result.error);
+            return;
         }
+
+        const service = result.data;
+        console.log('Service data loaded for editing:', service);
+
+        // Check the structure of the service object to understand what ID field to use
+        console.log('Available ID fields in service object:');
+        if (service.listing_id) console.log('- listing_id:', service.listing_id);
+        if (service.id) console.log('- id:', service.id);
+        if (service._id) console.log('- _id:', service._id);
+
+        // Set form title for editing
+        document.getElementById('modal-title').textContent = 'Edit Service';
+
+        // IMPORTANT: Make sure we're using the right ID field
+        // Try different ID fields in order of preference
+        const idToUse = service.listing_id || service.id || service._id;
+        console.log('Using ID for update:', idToUse);
+
+        document.getElementById('service-id').value = idToUse;
+        document.getElementById('service-title').value = service.title || '';
+        document.getElementById('service-category').value = service.category_name || service.category || '';
+        document.getElementById('service-price').value = service.price || '';
+        document.getElementById('service-description').value = service.description || '';
+        document.getElementById('service-image').value = service.image_path || '';
+
+        // Show the form
+        document.getElementById('service-modal').style.display = 'block';
+    } catch (error) {
+        console.error('Error opening edit form:', error);
     }
+}
+    handleFormSubmit(event) {
+        event.preventDefault();
+
+        // Get the service ID to determine if we're creating or updating
+        const serviceId = document.getElementById('service-id').value;
+
+        // Collect data from service form
+        const serviceData = {
+            listing_id: serviceId || null,
+            title: document.getElementById('service-title').value.trim(),
+            category: document.getElementById('service-category').value,
+            price: parseFloat(document.getElementById('service-price').value),
+            description: document.getElementById('service-description').value.trim(),
+            imageUrl: document.getElementById('service-image').value.trim() || 'https://placehold.co/600x400?text=Cleaning+Service',
+            providerId: localStorage.getItem('currentUserId'),
+            providerName: localStorage.getItem('currentUsername'),
+            createdAt: new Date().toISOString()
+        };
+
+        if (serviceId) {
+            console.log('Updating existing service with ID:', serviceId);
+            // If service ID exists, we're updating
+            this.controller.updateServiceController(serviceData)
+                .then(result => {
+                    if (result && result.success) {
+                        console.log('Service updated successfully');
+                        // Reload the page after successful update
+                        window.location.reload();
+                    } else {
+                        console.error('Failed to update service:', result?.error);
+                        this.displayUpdateFailed();
+                    }
+                });
+        }
+
+        // Close the modal
+        this.closeForm();
+}
 
     displayUpdateSuccess(){
 
@@ -493,6 +589,10 @@ class serviceManagementController{
     constructor() {
         this.entity = new service();
     }
+    // Pass data to entity layer
+    async updateServiceController(serviceData) {
+        return this.entity.updateCleaningService(serviceData);
+    }
 }
 
 
@@ -504,9 +604,23 @@ class service{
         this.apiBaseUrl = 'http://localhost:3000/api';
     }
 
+    //prepares api data for the database
+    prepareApiData(serviceData) {
+        return {
+            listing_id: serviceData.listing_id || null,
+            title: serviceData.title || null,
+            description: serviceData.description || null,
+            price: serviceData.price || null,
+            image_path: serviceData.imageUrl || null,
+            user_id: serviceData.providerId || localStorage.getItem('currentUserId') || 'user01',
+            category: serviceData.category || null
+        };
+    }
     //creates a cleaning service listing on the website
     async createCleaningService(serviceData){
         try {
+            const apiData = this.prepareApiData(serviceData);
+
             console.log('Sending data to API:', apiData);
 
             // Make the API call to create the service
@@ -554,6 +668,68 @@ class service{
         }
     }
 
+    async updateCleaningService(serviceData) {
+    try {
+        // Make sure we're using listing_id consistently
+        const listingId = serviceData.listing_id;
+        // Add debug logging
+        console.log('Update service data received:', serviceData);
+        console.log('Listing ID extracted:', listingId);
+
+        if (!listingId) {
+            console.error('Missing listing_id for update operation');
+            return { success: false, error: 'Missing listing ID' };
+        }
+
+        // Make sure all required fields are present
+        const apiData = this.prepareApiData(serviceData);
+
+        // Enhanced debug logging
+        console.log('Updating listing with ID:', listingId);
+        console.log('API endpoint:', `${this.apiBaseUrl}/listings/${listingId}`);
+        console.log('Full request data:', apiData);
+
+        // IMPORTANT: Check if the API expects the ID in the URL or in the request body
+        // Some APIs expect the ID in both places, let's add it to the body as well
+        apiData.listing_id = listingId; // Ensure ID is in the body even if prepareApiData didn't include it
+
+        // Make the API call to update the service
+        const response = await fetch(`${this.apiBaseUrl}/listings/${listingId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(apiData)
+        });
+
+        const result = await response.json();
+        console.log('API update response:', result);
+
+        if (result.success) {
+            console.log('Successfully updated listing');
+            return { success: true, data: result.data };
+        } else {
+            // Enhanced error logging
+            console.error('Failed to update service. Server response:', result);
+            console.error('Attempted to update listing with ID:', listingId);
+            return { success: false, error: result.message };
+        }
+    } catch (error) {
+        console.error('Error updating service:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+    //delete cleaning service listings
+    deleteCleaningService(){
+
+    }
+
+    //search for cleaning service listings
+    searchCleaningService(){
+
+    }
+
     //gets only the user listings from the database
     async getUserListings(userId) {
         try {
@@ -574,56 +750,5 @@ class service{
             console.error('Error loading user listings:', error);
             return {success: false, error: error.message};
         }
-    }
-
-    //edit cleaning service listings
-    // updateCleaningService(serviceData){
-    //     try {
-    //         // Make sure all required fields are present
-    //         const apiData = {
-    //             id: serviceData.id,
-    //             title: serviceData.title || null,
-    //             description: serviceData.description || null,
-    //             price: serviceData.price || null,
-    //             image_path: serviceData.imageUrl || null,
-    //             user_id: serviceData.providerId || localStorage.getItem('currentUserId'),
-    //             category: serviceData.category || null
-    //         };
-    //
-    //         console.log('Sending update data to API:', apiData);
-    //
-    //         // Make the API call to update the service
-    //         const response = await fetch(`http://localhost:3000/api/listings/${apiData.id}`, {
-    //             method: 'PUT',
-    //             headers: {
-    //                 'Content-Type': 'application/json'
-    //             },
-    //             body: JSON.stringify(apiData)
-    //         });
-    //
-    //         const result = await response.json();
-    //         console.log('API update response:', result);
-    //
-    //         if (result.success) {
-    //             console.log('Successfully updated listing');
-    //             return { success: true, data: result.data };
-    //         } else {
-    //             console.error('Failed to update service:', result.message);
-    //             return { success: false, error: result.message };
-    //         }
-    //     } catch (error) {
-    //         console.error('Error updating service:', error);
-    //         return { success: false, error: error.message };
-    //     }
-    // }
-
-    //delete cleaning service listings
-    deleteCleaningService(){
-
-    }
-
-    //search for cleaning service listings
-    searchCleaningService(){
-
     }
 }
