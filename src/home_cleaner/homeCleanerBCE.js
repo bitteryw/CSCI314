@@ -435,27 +435,57 @@ class readServiceController {
 
 
 
-//Boundary for the updating of user listings
-class serviceManagementUI{
+//Boundary for the updating and deletion of user listingso
+class serviceManagementUI {
     constructor() {
         this.controller = new serviceManagementController();
+
         // Check if we're on the user listings page
         const isUserListingsPage = window.location.pathname.includes('cleanerListings.html');
+
+        // Initialize DOM elements and event listeners
         this.initDomElements();
         this.setupManagementEventListeners();
 
+        // Initialize user listings if on the right page
         if (isUserListingsPage) {
-            // For the cleaner listings page, display only listings that the user made
             this.servicePage = new readServicePage();
-
-            // Override the default display method to show only user listings
-            // This needs to happen after the readServicePage constructor runs
             setTimeout(() => {
                 this.displayUserServices();
             }, 0);
         }
-        // For other pages, the normal readServicePage initialization will run
-        // and display all services by default
+    }
+
+    // SECTION: Initialization Methods
+
+    initDomElements() {
+        this.addServiceBtn = document.getElementById('add-service-btn');
+        this.serviceForm = document.getElementById('service-form');
+        this.deleteModal = document.getElementById('delete-confirm-modal');
+        this.closeDeleteModalBtn = document.getElementById('close-delete-modal');
+        this.cancelDeleteBtn = document.getElementById('cancel-delete-button');
+        this.confirmDeleteBtn = document.getElementById('confirm-delete-button');
+
+        // Set up form submission handler if form exists
+        if (this.serviceForm) {
+            this.serviceForm.addEventListener('submit', (event) => this.handleFormSubmit(event));
+        }
+    }
+
+    setupManagementEventListeners() {
+        document.addEventListener('click', event => {
+            // Handle edit button clicks
+            if (event.target.classList.contains('edit-service-btn')) {
+                const serviceId = event.target.getAttribute('data-id');
+                this.openEditForm(serviceId);
+            }
+
+            // Handle delete button clicks
+            if (event.target.classList.contains('delete-service-btn')) {
+                const serviceId = event.target.getAttribute('data-id');
+                this.openDeleteConfirmation(serviceId);
+            }
+        });
     }
 
     displayUserServices() {
@@ -464,69 +494,44 @@ class serviceManagementUI{
         servicePage.displayUserListings();
     }
 
-    initDomElements() {
-        this.addServiceBtn = document.getElementById('add-service-btn');
-        this.serviceForm = document.getElementById('service-form');
-        if (this.serviceForm) {
-            this.serviceForm.addEventListener('submit', (event) => this.handleFormSubmit(event));
-        }
-    }
-
-    //Event Listener for Edit button
-    setupManagementEventListeners() {
-        document.addEventListener('click', event => {
-        if (event.target.classList.contains('edit-service-btn')) {
-        console.log('Edit button clicked!');
-        const serviceId = event.target.getAttribute('data-id');
-        console.log('Service ID:', serviceId);
-        this.openEditForm(serviceId);
-    }
-
-});}
+    // SECTION: Form Handling Methods
 
     async openEditForm(serviceId) {
-    try {
-        console.log('Opening edit form for service ID:', serviceId);
+        try {
+            console.log('Opening edit form for service ID:', serviceId);
 
-        // Get the service data from the controller
-        const controller = new readServiceController();
-        const result = await controller.getServiceByIdController(serviceId);
+            // Get the service data from the controller
+            const controller = new readServiceController();
+            const result = await controller.getServiceByIdController(serviceId);
 
-        if (!result.success) {
-            console.error('Failed to load service data:', result.error);
-            return;
+            if (!result.success) {
+                console.error('Failed to load service data:', result.error);
+                return;
+            }
+
+            const service = result.data;
+
+            // Set form title for editing
+            document.getElementById('modal-title').textContent = 'Edit Service';
+
+            // Find the right ID to use
+            const idToUse = service.listing_id || service.id || service._id;
+
+            // Populate form fields
+            document.getElementById('service-id').value = idToUse;
+            document.getElementById('service-title').value = service.title || '';
+            document.getElementById('service-category').value = service.category_name || service.category || '';
+            document.getElementById('service-price').value = service.price || '';
+            document.getElementById('service-description').value = service.description || '';
+            document.getElementById('service-image').value = service.image_path || '';
+
+            // Show the form
+            document.getElementById('service-modal').style.display = 'block';
+        } catch (error) {
+            console.error('Error opening edit form:', error);
         }
-
-        const service = result.data;
-        console.log('Service data loaded for editing:', service);
-
-        // Check the structure of the service object to understand what ID field to use
-        console.log('Available ID fields in service object:');
-        if (service.listing_id) console.log('- listing_id:', service.listing_id);
-        if (service.id) console.log('- id:', service.id);
-        if (service._id) console.log('- _id:', service._id);
-
-        // Set form title for editing
-        document.getElementById('modal-title').textContent = 'Edit Service';
-
-        // IMPORTANT: Make sure we're using the right ID field
-        // Try different ID fields in order of preference
-        const idToUse = service.listing_id || service.id || service._id;
-        console.log('Using ID for update:', idToUse);
-
-        document.getElementById('service-id').value = idToUse;
-        document.getElementById('service-title').value = service.title || '';
-        document.getElementById('service-category').value = service.category_name || service.category || '';
-        document.getElementById('service-price').value = service.price || '';
-        document.getElementById('service-description').value = service.description || '';
-        document.getElementById('service-image').value = service.image_path || '';
-
-        // Show the form
-        document.getElementById('service-modal').style.display = 'block';
-    } catch (error) {
-        console.error('Error opening edit form:', error);
     }
-}
+
     handleFormSubmit(event) {
         event.preventDefault();
 
@@ -564,14 +569,131 @@ class serviceManagementUI{
 
         // Close the modal
         this.closeForm();
-}
-
-    displayUpdateSuccess(){
-
     }
 
-    displayUpdateFailed(){
+    closeForm() {
+        document.getElementById('service-modal').style.display = 'none';
+    }
 
+    // SECTION: Delete Handling Methods
+
+    openDeleteConfirmation(serviceId) {
+        console.log('Opening delete confirmation for service ID:', serviceId);
+
+        // First check if the delete confirmation modal exists
+        const deleteModal = document.getElementById('delete-confirm-modal');
+        if (!deleteModal) {
+            console.error('Delete confirmation modal not found in DOM');
+            alert('Error: Could not open delete confirmation. Please try again.');
+            return;
+        }
+
+        // Set service ID to delete
+        const deleteServiceIdInput = document.getElementById('delete-service-id');
+        if (deleteServiceIdInput) {
+            deleteServiceIdInput.value = serviceId;
+        } else {
+            console.error('Hidden input for service ID not found in DOM');
+            // Create the hidden input if it doesn't exist
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.id = 'delete-service-id';
+            hiddenInput.value = serviceId;
+            deleteModal.querySelector('.modal-content').appendChild(hiddenInput);
+        }
+
+        // Show the delete confirmation modal
+        deleteModal.style.display = 'block';
+
+        // Set up the event handlers for the modal buttons
+        this.setupDeleteModalButtons();
+    }
+
+    setupDeleteModalButtons() {
+        const closeBtn = document.getElementById('close-delete-modal');
+        const cancelBtn = document.getElementById('cancel-delete-button');
+        const confirmBtn = document.getElementById('confirm-delete-button');
+
+        if (closeBtn) {
+            closeBtn.onclick = () => this.closeDeleteModal();
+        }
+
+        if (cancelBtn) {
+            cancelBtn.onclick = () => this.closeDeleteModal();
+        }
+
+        if (confirmBtn) {
+            confirmBtn.onclick = () => this.handleDeleteConfirm();
+        }
+    }
+
+    async handleDeleteConfirm() {
+        const serviceId = document.getElementById('delete-service-id').value;
+        console.log('Confirming deletion of service ID:', serviceId);
+
+        if (!serviceId) {
+            console.error('Missing service ID for deletion');
+            this.displayDeleteFailed();
+            return;
+        }
+
+        try {
+            // Call the controller to delete the service
+            const success = await this.controller.deleteServiceController(serviceId);
+
+            // Close the modal
+            this.closeDeleteModal();
+
+            if (success) {
+                console.log('Service deleted successfully');
+                this.displayDeleteSuccess();
+                // Reload the page or refresh the listings
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500); // Give time for success message to be seen
+            } else {
+                console.error('Failed to delete service');
+                this.displayDeleteFailed();
+            }
+        } catch (error) {
+            console.error('Error deleting service:', error);
+            this.closeDeleteModal();
+            this.displayDeleteFailed();
+        }
+    }
+
+    closeDeleteModal() {
+        const deleteModal = document.getElementById('delete-confirm-modal');
+        if (deleteModal) {
+            deleteModal.style.display = 'none';
+        }
+    }
+
+    // SECTION: Notification Methods
+
+    displayUpdateSuccess() {
+        this.showNotification('Service updated successfully!', '#4CAF50');
+    }
+
+    displayUpdateFailed() {
+        this.showNotification('Failed to update service. Please try again.', '#F44336');
+    }
+
+    displayDeleteSuccess() {
+        this.showNotification('Service deleted successfully!', '#4CAF50');
+    }
+
+    displayDeleteFailed() {
+        this.showNotification('Failed to delete service. Please try again.', '#F44336');
+    }
+
+    showNotification(message, bgColor) {
+        const notification = document.getElementById('notification');
+        if (notification) {
+            notification.textContent = message;
+            notification.style.backgroundColor = bgColor;
+            notification.style.display = 'block';
+        }
     }
 
     // Initialize when DOM is loaded
@@ -585,16 +707,27 @@ class serviceManagementUI{
     }
 }
 
+//controller in charge of the updating and deletion of listings
 class serviceManagementController{
     constructor() {
         this.entity = new service();
     }
-    // Pass data to entity layer
+    // Pass data to entity layer(update)
     async updateServiceController(serviceData) {
         return this.entity.updateCleaningService(serviceData);
     }
-}
 
+    //pass data to entity layer(delete)
+    async deleteServiceController(serviceId) {
+    console.log('Controller: Deleting service with ID:', serviceId);
+    if (!serviceId) {
+        return false;
+    }
+
+    // Pass the service ID to entity layer and return the boolean result
+    return this.entity.deleteCleaningService(serviceId);
+}
+}
 
 
 //Entity
@@ -720,9 +853,27 @@ class service{
     }
 }
 
-    //delete cleaning service listings
-    deleteCleaningService(){
+    async deleteCleaningService(serviceId) {  // Added the missing parameter
+     try {
+        console.log('Entity: Deleting service with ID:', serviceId);
 
+        // Make the API call to delete the service
+        const response = await fetch(`${this.apiBaseUrl}/listings/${serviceId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+        console.log('API delete response:', result);
+
+        // Return true if successful, false otherwise
+        return result.success === true;
+        } catch (error) {
+        console.error('Error deleting service:', error);
+        return false;
+        }
     }
 
     //search for cleaning service listings
