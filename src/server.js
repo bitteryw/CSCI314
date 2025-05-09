@@ -491,6 +491,409 @@ app.post('/api/register', async (req, res) => {
 
 
 
+//kh added for home owner-start
+// Get all services
+app.get('/api/services', async (req, res) => {
+    try {
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        const [rows] = await connection.execute('SELECT * FROM services');
+        await connection.end();
+
+        // Format the services to match the expected structure in the client
+        const services = rows.map(service => ({
+            id: service.id,
+            title: service.title,
+            category: service.category,
+            price: parseFloat(service.price),
+            description: service.description,
+            image: service.image_url,
+            provider: {
+                name: service.provider_name,
+                avatar: service.provider_avatar
+            }
+        }));
+
+        res.json({
+            success: true,
+            services: services
+        });
+    } catch (error) {
+        console.error('Error fetching services:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch services',
+            error: error.message
+        });
+    }
+});
+
+// Get a specific service by ID
+app.get('/api/services/:id', async (req, res) => {
+    try {
+        const serviceId = req.params.id;
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        const [rows] = await connection.execute(
+            'SELECT * FROM services WHERE id = ?',
+            [serviceId]
+        );
+        await connection.end();
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Service not found'
+            });
+        }
+
+        // Format the service to match the expected structure in the client
+        const service = {
+            id: rows[0].id,
+            title: rows[0].title,
+            category: rows[0].category,
+            price: parseFloat(rows[0].price),
+            description: rows[0].description,
+            image: rows[0].image_url,
+            provider: {
+                name: rows[0].provider_name,
+                avatar: rows[0].provider_avatar
+            }
+        };
+
+        res.json({
+            success: true,
+            service: service
+        });
+    } catch (error) {
+        console.error('Error fetching service:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch service',
+            error: error.message
+        });
+    }
+});
+
+// Search services by keyword
+app.get('/api/services/search', async (req, res) => {
+    try {
+        const keyword = req.query.keyword || '';
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        const [rows] = await connection.execute(
+            'SELECT * FROM services WHERE title LIKE ? OR description LIKE ? OR category LIKE ? OR provider_name LIKE ?',
+            [`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`]
+        );
+        await connection.end();
+
+        // Format the services to match the expected structure in the client
+        const services = rows.map(service => ({
+            id: service.id,
+            title: service.title,
+            category: service.category,
+            price: parseFloat(service.price),
+            description: service.description,
+            image: service.image_url,
+            provider: {
+                name: service.provider_name,
+                avatar: service.provider_avatar
+            }
+        }));
+
+        res.json({
+            success: true,
+            services: services
+        });
+    } catch (error) {
+        console.error('Error searching services:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to search services',
+            error: error.message
+        });
+    }
+});
+
+// Filter services by category
+app.get('/api/services/filter/:category', async (req, res) => {
+    try {
+        const category = req.params.category;
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        let query = 'SELECT * FROM services';
+        const params = [];
+        
+        if (category !== 'all') {
+            query += ' WHERE category = ?';
+            params.push(category);
+        }
+        
+        const [rows] = await connection.execute(query, params);
+        await connection.end();
+
+        // Format the services to match the expected structure in the client
+        const services = rows.map(service => ({
+            id: service.id,
+            title: service.title,
+            category: service.category,
+            price: parseFloat(service.price),
+            description: service.description,
+            image: service.image_url,
+            provider: {
+                name: service.provider_name,
+                avatar: service.provider_avatar
+            }
+        }));
+
+        res.json({
+            success: true,
+            services: services
+        });
+    } catch (error) {
+        console.error('Error filtering services:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to filter services',
+            error: error.message
+        });
+    }
+});
+
+// Get user's shortlist
+app.get('/api/shortlist/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        const [rows] = await connection.execute(
+            `SELECT s.* 
+             FROM services s
+             JOIN shortlists sl ON s.id = sl.service_id
+             WHERE sl.user_id = ?`,
+            [userId]
+        );
+        await connection.end();
+
+        // Format the services to match the expected structure in the client
+        const services = rows.map(service => ({
+            id: service.id,
+            title: service.title,
+            category: service.category,
+            price: parseFloat(service.price),
+            description: service.description,
+            image: service.image_url,
+            provider: {
+                name: service.provider_name,
+                avatar: service.provider_avatar
+            }
+        }));
+
+        res.json({
+            success: true,
+            services: services
+        });
+    } catch (error) {
+        console.error('Error fetching shortlist:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch shortlist',
+            error: error.message
+        });
+    }
+});
+
+// Add service to shortlist
+app.post('/api/shortlist/add', async (req, res) => {
+    try {
+        const { userId, serviceId } = req.body;
+        
+        if (!userId || !serviceId) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID and Service ID are required'
+            });
+        }
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Check if service exists
+        const [serviceCheck] = await connection.execute(
+            'SELECT * FROM services WHERE id = ?',
+            [serviceId]
+        );
+        
+        if (serviceCheck.length === 0) {
+            await connection.end();
+            return res.status(404).json({
+                success: false,
+                message: 'Service not found'
+            });
+        }
+        
+        // Check if already in shortlist
+        const [shortlistCheck] = await connection.execute(
+            'SELECT * FROM shortlists WHERE user_id = ? AND service_id = ?',
+            [userId, serviceId]
+        );
+        
+        if (shortlistCheck.length > 0) {
+            await connection.end();
+            return res.json({
+                success: true,
+                message: 'Service already in shortlist'
+            });
+        }
+        
+        // Add to shortlist
+        await connection.execute(
+            'INSERT INTO shortlists (user_id, service_id) VALUES (?, ?)',
+            [userId, serviceId]
+        );
+        
+        await connection.end();
+        
+        res.json({
+            success: true,
+            message: 'Service added to shortlist'
+        });
+    } catch (error) {
+        console.error('Error adding to shortlist:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to add to shortlist',
+            error: error.message
+        });
+    }
+});
+
+// Remove service from shortlist
+app.post('/api/shortlist/remove', async (req, res) => {
+    try {
+        const { userId, serviceId } = req.body;
+        
+        if (!userId || !serviceId) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID and Service ID are required'
+            });
+        }
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Remove from shortlist
+        await connection.execute(
+            'DELETE FROM shortlists WHERE user_id = ? AND service_id = ?',
+            [userId, serviceId]
+        );
+        
+        await connection.end();
+        
+        res.json({
+            success: true,
+            message: 'Service removed from shortlist'
+        });
+    } catch (error) {
+        console.error('Error removing from shortlist:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to remove from shortlist',
+            error: error.message
+        });
+    }
+});
+
+// Clear entire shortlist
+app.post('/api/shortlist/clear', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID is required'
+            });
+        }
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Clear shortlist
+        await connection.execute(
+            'DELETE FROM shortlists WHERE user_id = ?',
+            [userId]
+        );
+        
+        await connection.end();
+        
+        res.json({
+            success: true,
+            message: 'Shortlist cleared'
+        });
+    } catch (error) {
+        console.error('Error clearing shortlist:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to clear shortlist',
+            error: error.message
+        });
+    }
+});
+
+// Create a booking
+app.post('/api/bookings', async (req, res) => {
+    try {
+        const { userId, serviceId, date, time, address, notes } = req.body;
+        
+        // Basic validation
+        if (!userId || !serviceId || !date || !time || !address) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID, Service ID, date, time, and address are required'
+            });
+        }
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Check if service exists
+        const [serviceCheck] = await connection.execute(
+            'SELECT * FROM services WHERE id = ?',
+            [serviceId]
+        );
+        
+        if (serviceCheck.length === 0) {
+            await connection.end();
+            return res.status(404).json({
+                success: false,
+                message: 'Service not found'
+            });
+        }
+        
+        // Create booking
+        await connection.execute(
+            'INSERT INTO bookings (user_id, service_id, booking_date, booking_time, address, notes) VALUES (?, ?, ?, ?, ?, ?)',
+            [userId, serviceId, date, time, address, notes || null]
+        );
+        
+        await connection.end();
+        
+        res.json({
+            success: true,
+            message: 'Booking created successfully'
+        });
+    } catch (error) {
+        console.error('Error creating booking:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create booking',
+            error: error.message
+        });
+    }
+});
+
+
+
+
+//kh added for home owner-end
 
 
 
