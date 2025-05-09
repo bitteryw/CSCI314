@@ -5,11 +5,13 @@ class createServiceUI {
         this.controller = new createServiceController();
     }
 
+    //load DOMs
     initDomElements() {
         this.addServiceBtn = document.getElementById('add-service-btn');
         this.serviceForm = document.getElementById('service-form');
     }
 
+    //event listeners for when clicking the buttons in the webpage
     setupEventListeners() {
         // Add service button
         if (this.addServiceBtn) {
@@ -33,6 +35,7 @@ class createServiceUI {
         document.getElementById('service-modal').style.display = 'none';
     }
 
+    //handling of the form when creating a new listing
     handleFormSubmit(event) {
         event.preventDefault();
         // Collect data from service form
@@ -48,7 +51,7 @@ class createServiceUI {
             createdAt: new Date().toISOString()
         };
 
-        // Pass data to controller, if succeeds, reload the window
+        // Pass data to controller, if succeeds, reload the window, so it can display the new listing as well
         this.controller.createCleaningServiceController(serviceData)
             .then(result => {
                 if (result && result.success) {
@@ -77,16 +80,17 @@ class createServiceController {
         this.entity = new service();
     }
 
+    //might have to change the naming
     async createCleaningServiceController(serviceData){
-        // Validate the service data using the original service data structure
-        if (!this.validateServiceData(serviceData)) {
-            return { success: false, error: "Invalid service data" };
-        }
+        // Validate the service data, makes sure that it is in accordance to the business rules
+        //if (!this.validateServiceData(serviceData)) {
+        //    return { success: false, error: "Invalid service data" };
+        //}
         // Pass the original serviceData to the entity layer
         return this.entity.createCleaningService(serviceData);
     }
 
-    // Business logic: Validate service data
+    // Business logic: Validate service data //PUT THIS IN THE BOUNDARY
     validateServiceData(data) {
         // Check required fields
         if (!data.title || !data.price || !data.category) {
@@ -103,7 +107,7 @@ class createServiceController {
 }
 
 //Entity
-class service{
+class Service{
     // Base URL for API calls
     constructor(){
         this.apiBaseUrl = 'http://localhost:3000/api';
@@ -137,6 +141,7 @@ class service{
             const result = await response.json();
             console.log('API response:', result);
 
+            //can return boolean instead if needed
             if (result.success) {
                 console.log('Successfully created new listing');
                 await this.readCleaningService();
@@ -150,4 +155,16 @@ class service{
             return { success: false, error: error.message };
         }
     }
+    async readCleaningService(serviceData) {
+
     }
+    async updateCleaningService(serviceData){
+
+    }
+    async deleteCleaningService(serviceData){
+
+    }
+    async searchCleaningService(serviceData){
+
+    }
+}
