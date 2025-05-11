@@ -311,6 +311,160 @@
             display: none;
         }
 
+        /* User info in header */
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-left: 15px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .user-name {
+            font-weight: 500;
+            margin-right: 10px;
+        }
+        
+        .btn-logout {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-left: 8px;
+        }
+        
+        .btn-logout:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Nav tabs for main page and reports */
+        .nav-tabs {
+            display: flex;
+            margin-top: 20px;
+            background-color: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .nav-tab {
+            padding: 15px 20px;
+            cursor: pointer;
+            flex-grow: 1;
+            text-align: center;
+            transition: background-color 0.3s;
+            font-weight: 500;
+        }
+
+        .nav-tab.active {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .nav-tab:not(.active):hover {
+            background-color: var(--light-gray);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Report section styles */
+        .report-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .report-option {
+            background-color: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            flex: 1;
+            min-width: 200px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            text-align: center;
+        }
+
+        .report-option:hover {
+            transform: translateY(-5px);
+        }
+
+        .report-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .report-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .report-description {
+            font-size: 14px;
+            color: var(--dark-gray);
+        }
+
+        .report-results {
+            background-color: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background-color: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--dark-gray);
+        }
+
         /* Responsive adjustments */
         @media screen and (max-width: 768px) {
             .header-content {
@@ -337,6 +491,47 @@
                 align-items: flex-start;
                 gap: 15px;
             }
+
+            .report-options {
+                flex-direction: column;
+            }
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .report-date-range {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: var(--radius);
+        }
+
+        .export-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background-color: #4caf50;
+        }
+
+        .back-to-options {
+            margin-bottom: 20px;
+            display: inline-block;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .back-to-options:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -351,43 +546,125 @@
                 </div>
                 <div style="display: flex; align-items: center;">
                     <button class="btn" id="add-category-btn">+ Add Category</button>
+                    <button class="btn btn-secondary" id="generate-report-btn" style="margin-left: 10px;">Generate Reports</button>
+                    <div class="user-info">
+                        <div class="user-avatar" id="user-avatar">A</div>
+                        <span class="user-name" id="username-display">Admin User</span>
+                        <button class="btn-logout" id="logout-btn">Logout</button>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
 
     <main class="container">
-        <div class="welcome-section">
-            <h2>Category Management Portal</h2>
-            <p>Manage service categories to help users find the right cleaning services. Add, edit, or remove categories as needed.</p>
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <div class="nav-tab active" id="categories-tab">Categories</div>
+            <div class="nav-tab" id="reports-tab">Reports</div>
         </div>
 
-        <div id="error-container" class="error-container"></div>
+        <!-- Categories Tab Content -->
+        <div class="tab-content active" id="categories-content">
+            <div class="welcome-section">
+                <h2>Category Management Portal</h2>
+                <p>Manage service categories to help users find the right cleaning services. Add, edit, or remove categories as needed.</p>
+            </div>
 
-        <div class="management-header">
-            <h1 class="management-title">Service Categories</h1>
-            <div>
-                <button class="btn" id="add-category-btn-main">+ Add New Category</button>
+            <div id="error-container" class="error-container"></div>
+
+            <div class="management-header">
+                <h1 class="management-title">Service Categories</h1>
+                <div>
+                    <button class="btn" id="add-category-btn-main">+ Add New Category</button>
+                </div>
+            </div>
+
+            <div id="loading-spinner" class="loading-spinner"></div>
+
+            <table class="categories-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Category Name</th>
+                        <th>Description</th>
+                        <th>Services Count</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="categories-container">
+                    <!-- Categories will be dynamically generated here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Reports Tab Content -->
+        <div class="tab-content" id="reports-content">
+            <div class="welcome-section">
+                <h2>Reports Dashboard</h2>
+                <p>Generate and view reports to analyze category performance, service comparisons, and revenue metrics.</p>
+            </div>
+
+            <!-- Report Options Section -->
+            <div id="report-options-section">
+                <h2 class="section-title">Select Report Type</h2>
+                
+                <div class="report-options">
+                    <div class="report-option" id="daily-report">
+                        <div class="report-icon">📊</div>
+                        <div class="report-title">Daily Report</div>
+                        <p class="report-description">View daily performance metrics for each category</p>
+                    </div>
+                    
+                    <div class="report-option" id="weekly-report">
+                        <div class="report-icon">📈</div>
+                        <div class="report-title">Weekly Report</div>
+                        <p class="report-description">Compare services across previous weeks</p>
+                    </div>
+                    
+                    <div class="report-option" id="monthly-report">
+                        <div class="report-icon">💰</div>
+                        <div class="report-title">Monthly Report</div>
+                        <p class="report-description">Analyze revenue gaps between months</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Results Section (initially hidden) -->
+            <div id="report-results-section" style="display: none;">
+                <div class="back-to-options" id="back-to-options">← Back to report options</div>
+                
+                <div class="report-header">
+                    <h2 class="section-title" id="report-title">Daily Report</h2>
+                    
+                    <div class="report-date-range">
+                        <input type="date" id="start-date" class="date-input">
+                        <span id="end-date-label" style="display: none;">to</span>
+                        <input type="date" id="end-date" class="date-input" style="display: none;">
+                        <button class="btn" id="update-report-btn">Update</button>
+                    </div>
+                    
+                    
+                </div>
+                
+                <!-- Stats Overview -->
+                <div class="stats-container" id="report-stats">
+                    <!-- Stat cards will be dynamically generated here -->
+                </div>
+                
+                
+                
+                
+                <!-- Detailed Table -->
+                <div class="report-results">
+                    <h3>Detailed Data</h3>
+                    <table class="categories-table" id="report-table">
+                        <!-- Report table data will be dynamically generated here -->
+                    </table>
+                </div>
             </div>
         </div>
-
-        <div id="loading-spinner" class="loading-spinner"></div>
-
-        <table class="categories-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Category Name</th>
-                    <th>Description</th>
-                    <th>Services Count</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="categories-container">
-                <!-- Categories will be dynamically generated here -->
-            </tbody>
-        </table>
     </main>
 
     <!-- Add/Edit Category Modal -->
@@ -439,6 +716,19 @@
         </div>
     </div>
 
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-logout-modal">&times;</span>
+            <h2>Confirm Logout</h2>
+            <p>Are you sure you want to log out of your account?</p>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="cancel-logout-button">Cancel</button>
+                <button type="button" class="btn" id="confirm-logout-button">Logout</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // API URLs - Update these to match your server endpoints
         const API_BASE_URL = 'http://localhost:3000';
@@ -447,13 +737,27 @@
             CREATE_CATEGORY: `${API_BASE_URL}/api/categories`,
             UPDATE_CATEGORY: `${API_BASE_URL}/api/categories`, // Will append /:id in the function
             DELETE_CATEGORY: `${API_BASE_URL}/api/categories`, // Will append /:id in the function
-            SEARCH_CATEGORIES: `${API_BASE_URL}/api/categories/search`
+            SEARCH_CATEGORIES: `${API_BASE_URL}/api/categories/search`,
+            GET_DAILY_REPORT: `${API_BASE_URL}/api/reports/daily`,
+            GET_WEEKLY_REPORT: `${API_BASE_URL}/api/reports/weekly`,
+            GET_MONTHLY_REPORT: `${API_BASE_URL}/api/reports/monthly`
         };
+
+        // Current user info
+        let currentUser = {
+            user_id: 'admin01',
+            name: 'Admin User',
+            email: 'admin@cleanconnect.com'
+        };
+
+        // Current report type
+        let currentReportType = '';
 
         // DOM elements
         const categoriesContainer = document.getElementById('categories-container');
         const categoryModal = document.getElementById('category-modal');
         const deleteModal = document.getElementById('delete-modal');
+        const logoutModal = document.getElementById('logout-modal');
         const categoryForm = document.getElementById('category-form');
         const modalTitle = document.getElementById('modal-title');
         const categoryIdInput = document.getElementById('category-id');
@@ -472,12 +776,55 @@
         const confirmDeleteButton = document.getElementById('confirm-delete-button');
         const loadingSpinner = document.getElementById('loading-spinner');
         const errorContainer = document.getElementById('error-container');
+        const logoutBtn = document.getElementById('logout-btn');
+        const closeLogoutModal = document.getElementById('close-logout-modal');
+        const cancelLogoutButton = document.getElementById('cancel-logout-button');
+        const confirmLogoutButton = document.getElementById('confirm-logout-button');
+        const usernameDisplay = document.getElementById('username-display');
+        const userAvatar = document.getElementById('user-avatar');
+
+        // Tabs elements
+        const categoriesTab = document.getElementById('categories-tab');
+        const reportsTab = document.getElementById('reports-tab');
+        const categoriesContent = document.getElementById('categories-content');
+        const reportsContent = document.getElementById('reports-content');
+
+        // Report elements
+        const generateReportBtn = document.getElementById('generate-report-btn');
+        const reportOptionsSection = document.getElementById('report-options-section');
+        const reportResultsSection = document.getElementById('report-results-section');
+        const dailyReportOption = document.getElementById('daily-report');
+        const weeklyReportOption = document.getElementById('weekly-report');
+        const monthlyReportOption = document.getElementById('monthly-report');
+        const backToOptionsBtn = document.getElementById('back-to-options');
+        const reportTitle = document.getElementById('report-title');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const endDateLabel = document.getElementById('end-date-label');
+        const updateReportBtn = document.getElementById('update-report-btn');
+        const reportStats = document.getElementById('report-stats');
+        const reportTable = document.getElementById('report-table');
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             loadCategories();
             setupEventListeners();
+            setupUserInfo();
+            setupDates();
         });
+
+        // Setup user information
+        function setupUserInfo() {
+            usernameDisplay.textContent = currentUser.name;
+            userAvatar.textContent = currentUser.name.charAt(0);
+        }
+
+        // Setup initial dates for reports
+        function setupDates() {
+            const today = new Date().toISOString().split('T')[0];
+            startDateInput.value = today;
+            endDateInput.value = today;
+        }
 
         // Setup event listeners
         function setupEventListeners() {
@@ -504,7 +851,460 @@
             
             // Delete confirmation
             confirmDeleteButton.addEventListener('click', deleteCategory);
+
+            // Logout functionality
+            logoutBtn.addEventListener('click', showLogoutModal);
+            closeLogoutModal.addEventListener('click', hideLogoutModal);
+            cancelLogoutButton.addEventListener('click', hideLogoutModal);
+            confirmLogoutButton.addEventListener('click', logout);
+
+            // Tab navigation
+            categoriesTab.addEventListener('click', function() {
+                categoriesTab.classList.add('active');
+                reportsTab.classList.remove('active');
+                categoriesContent.classList.add('active');
+                reportsContent.classList.remove('active');
+            });
+
+            reportsTab.addEventListener('click', function() {
+                reportsTab.classList.add('active');
+                categoriesTab.classList.remove('active');
+                reportsContent.classList.add('active');
+                categoriesContent.classList.remove('active');
+            });
+
+            // Generate report button
+            generateReportBtn.addEventListener('click', function() {
+                reportsTab.click();
+            });
+
+            // Report option selections
+            dailyReportOption.addEventListener('click', function() {
+                showReport('daily');
+            });
+
+            weeklyReportOption.addEventListener('click', function() {
+                showReport('weekly');
+            });
+
+            monthlyReportOption.addEventListener('click', function() {
+                showReport('monthly');
+            });
+
+            // Back to report options
+            backToOptionsBtn.addEventListener('click', function() {
+                reportOptionsSection.style.display = 'block';
+                reportResultsSection.style.display = 'none';
+            });
+
+            // Update report button
+            updateReportBtn.addEventListener('click', function() {
+                generateReport(currentReportType);
+            });
+
+            
+
+            // Close modals when clicking outside
+            window.addEventListener('click', function(e) {
+                if (e.target === logoutModal) {
+                    hideLogoutModal();
+                }
+            });
         }
+
+        // Show report by type
+        function showReport(type) {
+            currentReportType = type;
+            
+            // Update title
+            switch(type) {
+                case 'daily':
+                    reportTitle.textContent = 'Daily Report';
+                    endDateInput.style.display = 'none';
+                    endDateLabel.style.display = 'none';
+                    break;
+                case 'weekly':
+                    reportTitle.textContent = 'Weekly Report';
+                    endDateInput.style.display = 'inline-block';
+                    endDateLabel.style.display = 'inline-block';
+                    // Set end date to 7 days after start date
+                    const startDate = new Date(startDateInput.value);
+                    const endDate = new Date(startDate);
+                    endDate.setDate(endDate.getDate() + 6);
+                    endDateInput.value = endDate.toISOString().split('T')[0];
+                    break;
+                case 'monthly':
+                    reportTitle.textContent = 'Monthly Report';
+                    endDateInput.style.display = 'inline-block';
+                    endDateLabel.style.display = 'inline-block';
+                    // Set end date to the end of the month
+                    const date = new Date(startDateInput.value);
+                    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+                    endDateInput.value = lastDay.toISOString().split('T')[0];
+                    break;
+            }
+            
+            // Hide options and show results
+            reportOptionsSection.style.display = 'none';
+            reportResultsSection.style.display = 'block';
+            
+            // Generate the report
+            generateReport(type);
+        }
+
+        // Generate report data
+        async function generateReport(type) {
+    reportStats.innerHTML = '<div class="loading-spinner" style="display:block"></div>';
+    reportTable.innerHTML = '';
+    
+    try {
+        let url;
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+        
+        switch(type) {
+            case 'daily':
+                url = `${API_ENDPOINTS.GET_DAILY_REPORT}?date=${startDate}`;
+                break;
+            case 'weekly':
+                url = `${API_ENDPOINTS.GET_WEEKLY_REPORT}?startDate=${startDate}&endDate=${endDate}`;
+                break;
+            case 'monthly':
+                url = `${API_ENDPOINTS.GET_MONTHLY_REPORT}?startDate=${startDate}&endDate=${endDate}`;
+                break;
+        }
+        
+        // Make the actual API call instead of generating mock data
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch report: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to fetch report');
+        }
+        
+        // Use the real data from your API
+        renderReportStats(data.data);
+        renderReportChart(data.data, type);
+        renderReportTable(data.data, type);
+        
+    } catch (error) {
+        console.error(`Error generating ${type} report:`, error);
+        reportStats.innerHTML = `<div class="error-container" style="display:block">Failed to generate report: ${error.message}</div>`;
+    }
+}
+
+        
+        // Render report stats
+        function renderReportStats(data) {
+    reportStats.innerHTML = '';
+    
+    // Ensure data has required structure
+    if (!data) {
+        reportStats.innerHTML = '<div class="error-container" style="display:block">No data available</div>';
+        return;
+    }
+    
+    switch(currentReportType) {
+        case 'daily':
+            // Make sure categories exists and has items
+            const mostPopularDaily = data.categories && data.categories.length > 0 
+                ? data.categories.sort((a, b) => (b.bookings || 0) - (a.bookings || 0))[0].name
+                : 'None';
+                
+            reportStats.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Total Bookings</div>
+                    <div class="stat-value">${data.totalBookings || 0}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Revenue</div>
+                    <div class="stat-value">$${(data.totalRevenue || 0).toFixed(2)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Most Popular Category</div>
+                    <div class="stat-value">${mostPopularDaily}</div>
+                </div>
+            `;
+            break;
+            
+            
+        case 'weekly':
+            // Check if dailyData exists and has entries
+            if (!data.dailyData || !Array.isArray(data.dailyData) || data.dailyData.length === 0) {
+                reportStats.innerHTML = '<div class="error-container" style="display:block">No daily data available</div>';
+                return;
+            }
+            
+            // Find highest day safely
+            const highestDay = data.dailyData.reduce((max, day) => 
+                (day && day.totalBookings > (max?.totalBookings || 0)) ? day : max, 
+                data.dailyData[0] || { date: data.startDate, totalBookings: 0 });
+            
+            // Safely get most popular category
+            const mostPopularWeekly = data.categories && data.categories.length > 0 
+                ? data.categories.sort((a, b) => (b.bookings || 0) - (a.bookings || 0))[0].name
+                : 'None';
+            
+            reportStats.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Weekly Bookings</div>
+                    <div class="stat-value">${data.totalBookings || 0}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Weekly Revenue</div>
+                    <div class="stat-value">$${(data.totalRevenue || 0).toFixed(2)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Peak Day</div>
+                    <div class="stat-value">${highestDay && highestDay.date ? 
+                        new Date(highestDay.date).toLocaleDateString('en-US', {weekday: 'long'}) : 'None'}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Most Popular Category</div>
+                    <div class="stat-value">${mostPopularWeekly}</div>
+                </div>
+            `;
+            break;
+            
+        case 'monthly':
+            // Check for required data structures
+            if (!data.currentMonth || !data.previousMonth) {
+                reportStats.innerHTML = '<div class="error-container" style="display:block">Monthly data is incomplete</div>';
+                return;
+            }
+            
+            // Safe values for bookings and growth
+            const curBookings = data.currentMonth.totalBookings || 0;
+            const prevBookings = data.previousMonth.totalBookings || 0;
+            const bookingGrowth = data.bookingGrowth || 0;
+            
+            // Safe values for revenue and growth
+            const curRevenue = data.currentMonth.totalRevenue || 0;
+            const prevRevenue = data.previousMonth.totalRevenue || 0;
+            const revenueGrowth = data.revenueGrowth || 0;
+            
+            // Safely find best growth category
+            let bestGrowthCat = 'None';
+            let needsAttentionCat = 'None';
+            
+            if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+                // Get categories with valid growth values
+                const validCategories = data.categories.filter(cat => cat && typeof cat.revenueGrowth !== 'undefined');
+                
+                if (validCategories.length > 0) {
+                    // Sort for best and worst growth
+                    const sortedByGrowth = [...validCategories].sort((a, b) => 
+                        (parseFloat(b.revenueGrowth) || 0) - (parseFloat(a.revenueGrowth) || 0));
+                    
+                    bestGrowthCat = sortedByGrowth[0].name || 'None';
+                    needsAttentionCat = sortedByGrowth[sortedByGrowth.length - 1].name || 'None';
+                }
+            }
+            
+            reportStats.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Monthly Bookings</div>
+                    <div class="stat-value">${curBookings}</div>
+                    <div style="color: ${parseFloat(bookingGrowth) >= 0 ? 'green' : 'red'};">
+                        ${parseFloat(bookingGrowth) >= 0 ? '↑' : '↓'} ${Math.abs(parseFloat(bookingGrowth))}%
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Monthly Revenue</div>
+                    <div class="stat-value">$${curRevenue.toFixed(2)}</div>
+                    <div style="color: ${parseFloat(revenueGrowth) >= 0 ? 'green' : 'red'};">
+                        ${parseFloat(revenueGrowth) >= 0 ? '↑' : '↓'} ${Math.abs(parseFloat(revenueGrowth))}%
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Best Growth Category</div>
+                    <div class="stat-value">${bestGrowthCat}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Needs Attention</div>
+                    <div class="stat-value">${needsAttentionCat}</div>
+                </div>
+            `;
+            break;
+    }
+}
+
+        // Empty function maintained for compatibility
+        function renderReportChart(data, type) {
+            // Chart functionality removed
+            return;
+        }
+
+        // Render report table
+       function renderReportTable(data, type) {
+    reportTable.innerHTML = '';
+    
+    // Safety check for data
+    if (!data) {
+        reportTable.innerHTML = '<div class="error-container" style="display:block">No data available for table</div>';
+        return;
+    }
+    
+    switch(type) {
+        case 'daily':
+            // Safety check for categories
+            if (!data.categories || !Array.isArray(data.categories)) {
+                reportTable.innerHTML = '<div class="error-container" style="display:block">No category data available for table</div>';
+                return;
+            }
+            
+            // Create a table for daily category performance (without rating column)
+            reportTable.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Bookings</th>
+                        <th>Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.categories.map(cat => {
+                        if (!cat) return '';
+                        return `
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <span style="font-size: 20px; margin-right: 8px;">${cat.icon || '📊'}</span>
+                                        ${cat.name || 'Unknown'}
+                                    </div>
+                                </td>
+                                <td>${cat.bookings || 0}</td>
+                                <td>$${(cat.revenue || 0).toFixed(2)}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                    <tr style="font-weight: bold; background-color: #f9f9f9;">
+                        <td>Total</td>
+                        <td>${data.totalBookings || 0}</td>
+                        <td>$${(data.totalRevenue || 0).toFixed(2)}</td>
+                    </tr>
+                </tbody>
+            `;
+            break;
+            
+        case 'weekly':
+            // Safety checks for required data
+            if (!data.categories || !Array.isArray(data.categories) || 
+                !data.dailyData || !Array.isArray(data.dailyData)) {
+                reportTable.innerHTML = '<div class="error-container" style="display:block">Week data is incomplete</div>';
+                return;
+            }
+            
+            // Create a table for weekly category performance
+            reportTable.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Total Bookings</th>
+                        <th>Total Revenue</th>
+                        <th>Avg. Bookings/Day</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.categories.map(cat => {
+                        if (!cat) return '';
+                        
+                        // Safely calculate average
+                        const avgBookingsPerDay = data.dailyData.length > 0 ? 
+                            ((cat.bookings || 0) / data.dailyData.length).toFixed(1) : '0.0';
+                            
+                        return `
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <span style="font-size: 20px; margin-right: 8px;">${cat.icon || '📊'}</span>
+                                        ${cat.name || 'Unknown'}
+                                    </div>
+                                </td>
+                                <td>${cat.bookings || 0}</td>
+                                <td>$${(cat.revenue || 0).toFixed(2)}</td>
+                                <td>${avgBookingsPerDay}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                    <tr style="font-weight: bold; background-color: #f9f9f9;">
+                        <td>Total</td>
+                        <td>${data.totalBookings || 0}</td>
+                        <td>$${(data.totalRevenue || 0).toFixed(2)}</td>
+                        <td>${data.dailyData.length > 0 ? 
+                            ((data.totalBookings || 0) / data.dailyData.length).toFixed(1) : '0.0'}</td>
+                    </tr>
+                </tbody>
+            `;
+            break;
+            
+        case 'monthly':
+            // Safety checks for required data
+            if (!data.categories || !Array.isArray(data.categories) || 
+                !data.currentMonth || !data.previousMonth) {
+                reportTable.innerHTML = '<div class="error-container" style="display:block">Monthly data is incomplete</div>';
+                return;
+            }
+            
+            // Create a table for monthly comparison
+            reportTable.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Previous Month</th>
+                        <th>Current Month</th>
+                        <th>Growth</th>
+                        <th>Revenue Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.categories.map(cat => {
+                        if (!cat) return '';
+                        
+                        // Safe values
+                        const prevRev = cat.previousRevenue || 0;
+                        const currRev = cat.currentRevenue || 0;
+                        const revGrowth = cat.revenueGrowth || 0;
+                        const revChange = currRev - prevRev;
+                        
+                        return `
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <span style="font-size: 20px; margin-right: 8px;">${cat.icon || '📊'}</span>
+                                        ${cat.name || 'Unknown'}
+                                    </div>
+                                </td>
+                                <td>$${prevRev.toFixed(2)}</td>
+                                <td>$${currRev.toFixed(2)}</td>
+                                <td style="color: ${revGrowth >= 0 ? 'green' : 'red'};">
+                                    ${revGrowth >= 0 ? '+' : ''}${revGrowth}%
+                                </td>
+                                <td>$${revChange.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                    <tr style="font-weight: bold; background-color: #f9f9f9;">
+                        <td>Total</td>
+                        <td>$${(data.previousMonth.totalRevenue || 0).toFixed(2)}</td>
+                        <td>$${(data.currentMonth.totalRevenue || 0).toFixed(2)}</td>
+                        <td style="color: ${data.revenueGrowth >= 0 ? 'green' : 'red'};">
+                            ${data.revenueGrowth >= 0 ? '+' : ''}${data.revenueGrowth || 0}%
+                        </td>
+                        <td>$${((data.currentMonth.totalRevenue || 0) - (data.previousMonth.totalRevenue || 0)).toFixed(2)}</td>
+                    </tr>
+                </tbody>
+            `;
+            break;
+    }
+}
+
+        
 
         // Show loading spinner
         function showLoading() {
@@ -677,6 +1477,33 @@ function renderCategories(categoriesToRender) {
         // Hide the delete modal
         function hideDeleteModal() {
             deleteModal.style.display = 'none';
+        }
+
+        // Show logout confirmation modal
+        function showLogoutModal() {
+            logoutModal.style.display = 'block';
+        }
+
+        // Hide the logout modal
+        function hideLogoutModal() {
+            logoutModal.style.display = 'none';
+        }
+
+        // Logout functionality
+        function logout() {
+            // In a real app, this would call an API endpoint to invalidate the session
+            currentUser = null;
+            
+            // Redirect to login page (in a real app)
+            alert('You have been logged out successfully.');
+            // window.location.href = '/login.html';
+            
+            // Update UI for demo
+            usernameDisplay.textContent = 'Guest User';
+            userAvatar.textContent = 'G';
+            
+            // Close the logout modal
+            hideLogoutModal();
         }
 
         // Clear validation errors

@@ -1189,6 +1189,431 @@ app.delete('/api/categories/:id', async (req, res) => {
 });
 
 
+// API endpoint for daily reports
+app.get('/api/reports/daily', async (req, res) => {
+    try {
+        const date = req.query.date || new Date().toISOString().split('T')[0];
+        const result = await getDailyReportData(date);
+        res.json(result);
+    } catch (error) {
+        console.error('Error in daily report endpoint:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate daily report',
+            error: error.message
+        });
+    }
+});
+
+// API endpoint for weekly reports
+app.get('/api/reports/weekly', async (req, res) => {
+    try {
+        const startDate = req.query.startDate;
+        const endDate = req.query.endDate || startDate;
+        
+        if (!startDate) {
+            return res.status(400).json({
+                success: false,
+                message: 'Start date is required'
+            });
+        }
+        
+        const result = await getWeeklyReportData(startDate, endDate);
+        res.json(result);
+    } catch (error) {
+        console.error('Error in weekly report endpoint:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate weekly report',
+            error: error.message
+        });
+    }
+});
+
+// API endpoint for monthly reports
+app.get('/api/reports/monthly', async (req, res) => {
+    try {
+        const startDate = req.query.startDate;
+        const endDate = req.query.endDate || startDate;
+        
+        if (!startDate) {
+            return res.status(400).json({
+                success: false,
+                message: 'Start date is required'
+            });
+        }
+        
+        const result = await getMonthlyReportData(startDate, endDate);
+        res.json(result);
+    } catch (error) {
+        console.error('Error in monthly report endpoint:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate monthly report',
+            error: error.message
+        });
+    }
+});
+
+
+// Query function for daily reports - simplified version without rating
+async function getDailyReportData(date) {
+    console.log("getDailyReportData called with date:", date);
+    
+    try {
+        // Connect to your database
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Get total bookings and revenue for the date
+        const [totals] = await connection.execute(`
+            SELECT COUNT(*) as totalBookings, 
+                   SUM(s.price) as totalRevenue
+            FROM bookings b
+            JOIN services s ON b.service_id = s.id
+            WHERE DATE(b.booking_date) = ?
+        `, [date]);
+        
+        // Get category-specific stats
+        const [categoryStats] = await connection.execute(`
+            SELECT c.id, c.name, c.icon, 
+                   COUNT(b.id) as bookings, 
+                   SUM(s.price) as revenue
+            FROM categories c
+            LEFT JOIN services s ON c.name = s.category
+            LEFT JOIN bookings b ON s.id = b.service_id AND DATE(b.booking_date) = ?
+            GROUP BY c.id, c.name, c.icon
+        `, [date]);
+        
+        // Make sure we have at least one category for the frontend
+        const processedCategories = categoryStats && categoryStats.length > 0 
+            ? categoryStats.map(cat => ({
+                id: cat.id || 0,
+                name: cat.name || "Uncategorized",
+                icon: cat.icon || "📋",
+                bookings: parseInt(cat.bookings || 0),
+                revenue: parseFloat(cat.revenue || 0)
+              }))
+            : [{ // Default placeholder category if none found
+                id: 0,
+                name: "No Categories", 
+                icon: "📋",
+                bookings: 0,
+                revenue: 0
+              }];
+              
+        return {
+            success: true,
+            data: {
+                date: date || new Date().toISOString().split('T')[0],
+                totalBookings: totals[0] ? parseInt(totals[0].totalBookings || 0) : 0,
+                totalRevenue: totals[0] ? parseFloat(totals[0].totalRevenue || 0) : 0,
+                categories: processedCategories
+            }
+        };
+    } catch (error) {
+        console.error("Error in getDailyReportData:", error);
+        return {
+            success: false,
+            message: `Error generating daily report: ${error.message}`,
+            data: {
+                date: date || new Date().toISOString().split('T')[0],
+                totalBookings: 0,
+                totalRevenue: 0,
+                categories: [{
+                    id: 0,
+                    name: "Error Loading Data",
+                    icon: "❌",
+                    bookings: 0,
+                    revenue: 0
+                }]
+            }
+        };
+    }
+}
+// Similar simplified approach for other report functions
+// Query function for weekly reports
+async function getWeeklyReportData(startDate, endDate) {
+    console.log("getWeeklyReportData called with dates:", startDate, endDate);
+    
+    try {
+        // Connect to your database
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Get total bookings and revenue for the week
+        const [totals] = await connection.execute(`
+            SELECT COUNT(*) as totalBookings, 
+                   SUM(s.price) as totalRevenue
+            FROM bookings b
+            JOIN services s ON b.service_id = s.id
+            WHERE DATE(b.booking_date) BETWEEN ? AND ?
+        `, [startDate, endDate]);
+        
+        // Get daily data for the week
+        const [dailyData] = await connection.execute(`
+            SELECT DATE(b.booking_date) as date,
+                   COUNT(*) as totalBookings,
+                   SUM(s.price) as totalRevenue
+            FROM bookings b
+            JOIN services s ON b.service_id = s.id
+            WHERE DATE(b.booking_date) BETWEEN ? AND ?
+            GROUP BY DATE(b.booking_date)
+            ORDER BY DATE(b.booking_date)
+        `, [startDate, endDate]);
+        
+        // Get category-specific stats for the week
+        const [categoryStats] = await connection.execute(`
+            SELECT c.id, c.name, c.icon, 
+                   COUNT(b.id) as bookings, 
+                   SUM(s.price) as revenue
+            FROM categories c
+            LEFT JOIN services s ON c.name = s.category
+            LEFT JOIN bookings b ON s.id = b.service_id AND DATE(b.booking_date) BETWEEN ? AND ?
+            GROUP BY c.id, c.name, c.icon
+        `, [startDate, endDate]);
+        
+        // Process daily data to ensure all days in range have entries
+        const processedDailyData = [];
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
+            const dateStr = day.toISOString().split('T')[0];
+            const dayData = dailyData.find(d => d.date.toISOString().split('T')[0] === dateStr);
+            
+            processedDailyData.push({
+                date: dateStr,
+                totalBookings: dayData ? parseInt(dayData.totalBookings) : 0,
+                totalRevenue: dayData ? parseFloat(dayData.totalRevenue) : 0
+            });
+        }
+        
+        // Process category data
+        const processedCategories = categoryStats && categoryStats.length > 0 
+            ? categoryStats.map(cat => ({
+                id: cat.id || 0,
+                name: cat.name || "Uncategorized",
+                icon: cat.icon || "📋",
+                bookings: parseInt(cat.bookings || 0),
+                revenue: parseFloat(cat.revenue || 0)
+              }))
+            : [{ // Default placeholder category if none found
+                id: 0,
+                name: "No Categories", 
+                icon: "📋",
+                bookings: 0,
+                revenue: 0
+              }];
+        
+        return {
+            success: true,
+            data: {
+                startDate: startDate,
+                endDate: endDate,
+                totalBookings: totals[0] ? parseInt(totals[0].totalBookings || 0) : 0,
+                totalRevenue: totals[0] ? parseFloat(totals[0].totalRevenue || 0) : 0,
+                dailyData: processedDailyData,
+                categories: processedCategories
+            }
+        };
+    } catch (error) {
+        console.error("Error in getWeeklyReportData:", error);
+        return {
+            success: false,
+            message: `Error generating weekly report: ${error.message}`,
+            data: {
+                startDate: startDate,
+                endDate: endDate,
+                totalBookings: 0,
+                totalRevenue: 0,
+                dailyData: [],
+                categories: [{
+                    id: 0,
+                    name: "Error Loading Data",
+                    icon: "❌",
+                    bookings: 0,
+                    revenue: 0
+                }]
+            }
+        };
+    }
+}
+
+// Query function for monthly reports
+async function getMonthlyReportData(startDate, endDate) {
+    console.log("getMonthlyReportData called with dates:", startDate, endDate);
+    
+    try {
+        // Connect to your database
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Extract month and year from the start date
+        const currentMonth = new Date(startDate);
+        const currentYear = currentMonth.getFullYear();
+        const currentMonthNum = currentMonth.getMonth();
+        
+        // Calculate previous month dates
+        const previousMonth = new Date(currentMonth);
+        previousMonth.setMonth(previousMonth.getMonth() - 1);
+        const previousMonthStart = new Date(previousMonth.getFullYear(), previousMonth.getMonth(), 1);
+        const previousMonthEnd = new Date(currentYear, currentMonthNum, 0);
+        
+        // Format dates for SQL
+        const prevStart = previousMonthStart.toISOString().split('T')[0];
+        const prevEnd = previousMonthEnd.toISOString().split('T')[0];
+        
+        // Get data for current month
+        const [currentMonthData] = await connection.execute(`
+            SELECT COUNT(*) as totalBookings, 
+                   SUM(s.price) as totalRevenue
+            FROM bookings b
+            JOIN services s ON b.service_id = s.id
+            WHERE DATE(b.booking_date) BETWEEN ? AND ?
+        `, [startDate, endDate]);
+        
+        // Get data for previous month
+        const [previousMonthData] = await connection.execute(`
+            SELECT COUNT(*) as totalBookings, 
+                   SUM(s.price) as totalRevenue
+            FROM bookings b
+            JOIN services s ON b.service_id = s.id
+            WHERE DATE(b.booking_date) BETWEEN ? AND ?
+        `, [prevStart, prevEnd]);
+        
+        // Get current month category stats
+        const [currentCategoryStats] = await connection.execute(`
+            SELECT c.id, c.name, c.icon, 
+                   COUNT(b.id) as bookings, 
+                   SUM(s.price) as revenue
+            FROM categories c
+            LEFT JOIN services s ON c.name = s.category
+            LEFT JOIN bookings b ON s.id = b.service_id AND DATE(b.booking_date) BETWEEN ? AND ?
+            GROUP BY c.id, c.name, c.icon
+        `, [startDate, endDate]);
+        
+        // Get previous month category stats
+        const [prevCategoryStats] = await connection.execute(`
+            SELECT c.id, c.name, c.icon, 
+                   COUNT(b.id) as bookings, 
+                   SUM(s.price) as revenue
+            FROM categories c
+            LEFT JOIN services s ON c.name = s.category
+            LEFT JOIN bookings b ON s.id = b.service_id AND DATE(b.booking_date) BETWEEN ? AND ?
+            GROUP BY c.id, c.name, c.icon
+        `, [prevStart, prevEnd]);
+        
+        // Process data for the response
+        const curTotalBookings = currentMonthData[0] ? parseInt(currentMonthData[0].totalBookings || 0) : 0;
+        const curTotalRevenue = currentMonthData[0] ? parseFloat(currentMonthData[0].totalRevenue || 0) : 0;
+        const prevTotalBookings = previousMonthData[0] ? parseInt(previousMonthData[0].totalBookings || 0) : 0;
+        const prevTotalRevenue = previousMonthData[0] ? parseFloat(previousMonthData[0].totalRevenue || 0) : 0;
+        
+        // Calculate growth percentages
+        const bookingGrowth = prevTotalBookings === 0 ? 100 : 
+            ((curTotalBookings - prevTotalBookings) / prevTotalBookings * 100).toFixed(1);
+        const revenueGrowth = prevTotalRevenue === 0 ? 100 : 
+            ((curTotalRevenue - prevTotalRevenue) / prevTotalRevenue * 100).toFixed(1);
+        
+        // Process category data with growth calculations
+        const allCategoryIds = new Set([
+            ...currentCategoryStats.map(c => c.id),
+            ...prevCategoryStats.map(c => c.id)
+        ]);
+        
+        const processedCategories = [];
+        allCategoryIds.forEach(id => {
+            const curCat = currentCategoryStats.find(c => c.id === id) || {
+                id: id,
+                name: "Unknown",
+                icon: "❓",
+                bookings: 0,
+                revenue: 0
+            };
+            
+            const prevCat = prevCategoryStats.find(c => c.id === id) || {
+                id: id,
+                bookings: 0,
+                revenue: 0
+            };
+            
+            const bookingsGrowth = prevCat.bookings === 0 ? 100 : 
+                ((curCat.bookings - prevCat.bookings) / prevCat.bookings * 100).toFixed(1);
+            const revenueGrowth = prevCat.revenue === 0 ? 100 : 
+                ((curCat.revenue - prevCat.revenue) / prevCat.revenue * 100).toFixed(1);
+            
+            processedCategories.push({
+                id: id,
+                name: curCat.name,
+                icon: curCat.icon,
+                currentBookings: parseInt(curCat.bookings || 0),
+                previousBookings: parseInt(prevCat.bookings || 0),
+                bookingGrowth: bookingsGrowth,
+                currentRevenue: parseFloat(curCat.revenue || 0),
+                previousRevenue: parseFloat(prevCat.revenue || 0),
+                revenueGrowth: revenueGrowth
+            });
+        });
+        
+        // Sort by revenue growth for better display
+        processedCategories.sort((a, b) => b.revenueGrowth - a.revenueGrowth);
+        
+        return {
+            success: true,
+            data: {
+                startDate: startDate,
+                endDate: endDate,
+                prevStartDate: prevStart,
+                prevEndDate: prevEnd,
+                currentMonth: {
+                    totalBookings: curTotalBookings,
+                    totalRevenue: curTotalRevenue
+                },
+                previousMonth: {
+                    totalBookings: prevTotalBookings,
+                    totalRevenue: prevTotalRevenue
+                },
+                bookingGrowth: bookingGrowth,
+                revenueGrowth: revenueGrowth,
+                categories: processedCategories
+            }
+        };
+    } catch (error) {
+        console.error("Error in getMonthlyReportData:", error);
+        return {
+            success: false,
+            message: `Error generating monthly report: ${error.message}`,
+            data: {
+                startDate: startDate,
+                endDate: endDate,   
+                currentMonth: { totalBookings: 0, totalRevenue: 0 },
+                previousMonth: { totalBookings: 0, totalRevenue: 0 },
+                bookingGrowth: 0,
+                revenueGrowth: 0,
+                categories: [{
+                    id: 0,
+                    name: "Error Loading Data",
+                    icon: "❌",
+                    currentBookings: 0,
+                    previousBookings: 0,
+                    bookingGrowth: 0,
+                    currentRevenue: 0,
+                    previousRevenue: 0,
+                    revenueGrowth: 0
+                }]
+            }
+        };
+    }
+}
+
+// Simple authentication middleware - if this doesn't exist yet
+function authenticateUser(req, res, next) {
+    // This is a placeholder - implement your actual authentication logic here
+    // For example, check for a valid JWT token in the Authorization header
+    
+    // For testing purposes, let's just allow all requests through
+    next();
+    
+    // In a real implementation, you would verify authentication and call next()
+    // only if the user is authenticated, otherwise return a 401 Unauthorized response
+}
 //kh added for platform management-end
 
 
