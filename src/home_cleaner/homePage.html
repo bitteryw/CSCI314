@@ -1,4 +1,4 @@
-<!DOCTYPE html> //random
+<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -123,17 +123,6 @@
             height: 100%;
         }
 
-        .service-card {
-            display: flex;
-            flex-direction: column;
-            background-color: var(--white);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            transition: transform 0.3s;
-            height: 100%;
-        }
-
         .service-info {
             padding: 15px;
             display: flex;
@@ -178,7 +167,7 @@
             height: 50px;
         }
         .service-provider {
-            margin-top: auto;  /* Push to bottom of flex container */
+            margin-top: auto;
             padding-top: 10px;
             border-top: 1px solid var(--light-gray);
         }
@@ -364,6 +353,92 @@
             align-items: center;
         }
 
+        /* NEW STYLES FOR ADDED FEATURES */
+        .service-stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: var(--dark-gray);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-weight: 500;
+            margin-left: 3px;
+        }
+
+        .tab-navigation {
+            display: flex;
+            margin-top: 30px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: var(--light-gray);
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .tab.active {
+            background-color: var(--white);
+            border: 1px solid var(--light-gray);
+            border-bottom: 1px solid var(--white);
+            margin-bottom: -1px;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: var(--white);
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .booking-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .booking-table th, .booking-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .booking-table th {
+            background-color: var(--light-gray);
+        }
+
+        .booking-search {
+            display: flex;
+            margin-bottom: 15px;
+        }
+
+        .booking-search input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        .booking-row {
+            cursor: pointer;
+        }
+
+        .booking-row:hover {
+            background-color: var(--light-gray);
+        }
+
         /* Responsive adjustments */
         @media screen and (max-width: 768px) {
             .header-content {
@@ -388,6 +463,21 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 10px;
+            }
+
+            .tab-navigation {
+                flex-direction: column;
+                border-bottom: none;
+            }
+
+            .tab {
+                border-radius: var(--radius);
+                margin-bottom: 5px;
+            }
+
+            .tab.active {
+                border-bottom: 1px solid var(--light-gray);
+                margin-bottom: 5px;
             }
         }
     </style>
@@ -418,25 +508,63 @@
             <h3>Welcome, <span id="welcome-username">Guest User</span>!</h3>
             <p>Manage your cleaning service listings or browse services from other providers.</p>
         </div>
-        <button class="btn" id="add-service-btn-banner">+ Add New Listing</button>
-    </div>
-
-    <div class="filter-section">
-        <h3 class="filter-title">Filter Services</h3>
-        <div class="filter-options">
-            <div class="filter-chip active" data-filter="all">All Services</div>
-            <div class="filter-chip" data-filter="home">Home Cleaning</div>
-            <div class="filter-chip" data-filter="office">Office Cleaning</div>
-            <div class="filter-chip" data-filter="carpet">Carpet Cleaning</div>
-            <div class="filter-chip" data-filter="windows">Window Cleaning</div>
-            <div class="filter-chip" data-filter="deep">Deep Cleaning</div>
+        <div>
+            <button class="btn" id="add-service-btn-banner">+ Add New Listing</button>
+            <button class="btn btn-secondary" id="view-bookings-btn">View Bookings</button>
         </div>
     </div>
 
-    <h2 class="section-title">Cleaning Services</h2>
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <div class="tab active" data-tab="listings">My Listings</div>
+        <div class="tab" data-tab="bookings">Booking History</div>
+    </div>
 
-    <div class="services-grid" id="services-container">
-        <!-- Services will be dynamically generated here -->
+    <!-- Listings Tab Content -->
+    <div class="tab-content active" id="listings-content">
+        <div class="filter-section">
+            <h3 class="filter-title">Filter Services</h3>
+            <div class="filter-options">
+                <div class="filter-chip active" data-filter="all">All Services</div>
+                <div class="filter-chip" data-filter="home">Home Cleaning</div>
+                <div class="filter-chip" data-filter="office">Office Cleaning</div>
+                <div class="filter-chip" data-filter="carpet">Carpet Cleaning</div>
+                <div class="filter-chip" data-filter="windows">Window Cleaning</div>
+                <div class="filter-chip" data-filter="deep">Deep Cleaning</div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Cleaning Services</h2>
+
+        <div class="services-grid" id="services-container">
+            <!-- Service cards will be dynamically added here -->
+        </div>
+    </div>
+
+    <!-- Bookings Tab Content -->
+    <div class="tab-content" id="bookings-content">
+        <h2 class="section-title">Booking History</h2>
+        
+        <div class="booking-search">
+            <input type="text" class="search-input" id="booking-search-input" placeholder="Search bookings by customer, service, or date...">
+            <button class="btn" id="booking-search-btn">Search</button>
+        </div>
+        
+        <table class="booking-table" id="booking-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Service</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="booking-table-body">
+                <!-- Booking history will be dynamically added here -->
+            </tbody>
+        </table>
     </div>
 </main>
 
@@ -499,6 +627,450 @@
         </div>
     </div>
 </div>
-<script src="homeCleaner.js"></script>
+
+<!-- Booking Details Modal -->
+<div id="booking-details-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" id="close-booking-modal">&times;</span>
+        <h2>Booking Details</h2>
+        <div id="booking-details-content"></div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" id="close-details-button">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+
+console.log("Script running!");
+localStorage.setItem('userId', 'user01');
+localStorage.setItem('currentUserId', 'user01');
+// Main JavaScript for CleanConnect cleaner dashboard
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Getting current user information
+    const currentUser = {
+        userId: localStorage.getItem('userId') || 'user01', // Default user for testing
+        name: localStorage.getItem('userName') || 'Guest User'
+    };
+
+    // Update user display elements
+    document.getElementById('username-display').textContent = currentUser.name;
+    document.getElementById('welcome-username').textContent = currentUser.name;
+    
+    // Set first initial in avatar
+    const userAvatar = document.getElementById('user-avatar');
+    if (userAvatar) {
+        userAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
+    }
+
+    // Tab functionality
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+            
+            // Remove active class from all tabs and contents
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            this.classList.add('active');
+            document.getElementById(tabId + '-content').classList.add('active');
+            
+            // Load data when switching to bookings tab
+            if (tabId === 'bookings') {
+                loadBookings();
+            }
+        });
+    });
+
+    // View Bookings button should switch to bookings tab
+    const viewBookingsBtn = document.getElementById('view-bookings-btn');
+    if (viewBookingsBtn) {
+        viewBookingsBtn.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            document.querySelector('[data-tab="bookings"]').classList.add('active');
+            document.getElementById('bookings-content').classList.add('active');
+            
+            // Load booking history
+            loadBookings();
+        });
+    }
+
+    // Function to load services with view and shortlist counts
+    function loadServices() {
+        //fetch(`/api/cleaner/services/${currentUser.userId}`)
+        fetch(`http://localhost:3000/api/cleaner/services/${currentUser.userId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const servicesContainer = document.getElementById('services-container');
+                    servicesContainer.innerHTML = '';
+                    
+                    if (data.services && data.services.length > 0) {
+                        data.services.forEach(service => {
+                            const serviceCard = document.createElement('div');
+                            serviceCard.className = 'service-card';
+                            serviceCard.innerHTML = `
+                                <img src="${service.image || 'https://via.placeholder.com/300x200?text=No+Image'}" alt="${service.title}" class="service-image">
+                                <div class="service-info">
+                                    <h3 class="service-title">${service.title}</h3>
+                                    <div class="service-stats">
+                                        <div class="stat-item">
+                                            <span class="views-count">${service.views || 0}</span>
+                                            <span class="stat-label">views</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="shortlists-count">${service.shortlists || 0}</span>
+                                            <span class="stat-label">shortlisted</span>
+                                        </div>
+                                    </div>
+                                    <p class="service-price">$${service.price.toFixed(2)}</p>
+                                    <p class="service-description">${service.description}</p>
+                                    <div class="card-actions">
+                                        <button class="btn card-btn" onclick="editService('${service.id}')">Edit</button>
+                                        <button class="btn btn-secondary card-btn" onclick="deleteService('${service.id}')">Delete</button>
+                                    </div>
+                                </div>
+                            `;
+                            servicesContainer.appendChild(serviceCard);
+                        });
+                    } else {
+                        servicesContainer.innerHTML = '<p>No services found. Add your first service listing!</p>';
+                    }
+                } else {
+                    console.error('Error loading services:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching services:', error);
+            });
+    }
+
+    // Function to load booking history
+    function loadBookings() {
+    console.log("Loading bookings for user ID:", currentUser.userId);
+    
+    //fetch(`/api/cleaner/bookings/${currentUser.userId}`)
+    fetch(`http://localhost:3000/api/cleaner/bookings/${currentUser.userId}`)
+        .then(response => {
+            console.log("Response status:", response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log("Booking data received:", data);
+            if (data.success) {
+                const tableBody = document.getElementById('booking-table-body');
+                tableBody.innerHTML = '';
+                
+                if (data.bookings && data.bookings.length > 0) {
+                    console.log(`Found ${data.bookings.length} bookings`);
+                    data.bookings.forEach(booking => {
+                        // Your existing code for creating rows
+                        const row = document.createElement('tr');
+                        row.className = 'booking-row';
+                        
+                        // Format date and time
+                        const bookingDate = new Date(booking.booking_date);
+                        const formattedDate = bookingDate.toLocaleDateString();
+                        
+                        row.innerHTML = `
+                            <td>${formattedDate}</td>
+                            <td>${booking.booking_time}</td>
+                            <td>${booking.service_title}</td>
+                            <td>${booking.customer_first_name} ${booking.customer_last_name}</td>
+                            <td>$${parseFloat(booking.service_price).toFixed(2)}</td>
+                            <td>${booking.status || 'Confirmed'}</td>
+                        `;
+                        
+                        // Add click event to show booking details
+                        row.addEventListener('click', () => {
+                            showBookingDetails(booking);
+                        });
+                        
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    console.log("No bookings found in response");
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No bookings found.</td></tr>';
+                    
+                    // Try the alternative endpoint as a fallback
+                    console.log("Trying alternative endpoint");
+                    fetch(`http://localhost:3000/api/user/bookings/${currentUser.userId}`)
+                        .then(response => response.json())
+                        .then(altData => {
+                            console.log("Alternative endpoint response:", altData);
+                            if (altData.success && altData.bookings && altData.bookings.length > 0) {
+                                console.log(`Found ${altData.bookings.length} bookings in alternative endpoint`);
+                                tableBody.innerHTML = '';
+                                altData.bookings.forEach(booking => {
+                                    // Format and display bookings from alternative endpoint
+                                    const row = document.createElement('tr');
+                                    row.className = 'booking-row';
+                                    
+                                    const bookingDate = new Date(booking.booking_date);
+                                    const formattedDate = bookingDate.toLocaleDateString();
+                                    
+                                    row.innerHTML = `
+                                        <td>${formattedDate}</td>
+                                        <td>${booking.booking_time}</td>
+                                        <td>${booking.service_title}</td>
+                                        <td>${booking.provider_first_name} ${booking.provider_last_name}</td>
+                                        <td>$${parseFloat(booking.service_price).toFixed(2)}</td>
+                                        <td>${booking.status || 'Confirmed'}</td>
+                                    `;
+                                    
+                                    row.addEventListener('click', () => {
+                                        showBookingDetails(booking);
+                                    });
+                                    
+                                    tableBody.appendChild(row);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error with alternative endpoint:', error);
+                        });
+                }
+            } else {
+                console.error('Error loading bookings:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching bookings:', error);
+        });
+}
+    // Function to search bookings
+    document.getElementById('booking-search-btn').addEventListener('click', () => {
+        const searchTerm = document.getElementById('booking-search-input').value.trim();
+        
+        if (!searchTerm) {
+            loadBookings(); // If search is empty, load all bookings
+            return;
+        }
+        
+        //fetch(`/api/cleaner/bookings/search/${currentUser.userId}?term=${encodeURIComponent(searchTerm)}`)
+        fetch(`http://localhost:3000/api/cleaner/bookings/search/${currentUser.userId}?term=${encodeURIComponent(searchTerm)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const tableBody = document.getElementById('booking-table-body');
+                    tableBody.innerHTML = '';
+                    
+                    if (data.bookings && data.bookings.length > 0) {
+                        data.bookings.forEach(booking => {
+                            const row = document.createElement('tr');
+                            row.className = 'booking-row';
+                            
+                            // Format date and time
+                            const bookingDate = new Date(booking.booking_date);
+                            const formattedDate = bookingDate.toLocaleDateString();
+                            
+                            row.innerHTML = `
+                                <td>${formattedDate}</td>
+                                <td>${booking.booking_time}</td>
+                                <td>${booking.service_title}</td>
+                                <td>${booking.customer_first_name} ${booking.customer_last_name}</td>
+                                <td>$${parseFloat(booking.service_price).toFixed(2)}</td>
+                                <td>${booking.status || 'Confirmed'}</td>
+                            `;
+                            
+                            // Add click event to show booking details
+                            row.addEventListener('click', () => {
+                                showBookingDetails(booking);
+                            });
+                            
+                            tableBody.appendChild(row);
+                        });
+                    } else {
+                        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No bookings found matching "${searchTerm}"</td></tr>`;
+                    }
+                } else {
+                    console.error('Error searching bookings:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error during search:', error);
+            });
+    });
+
+    // Function to show booking details
+    function showBookingDetails(booking) {
+        const detailsContent = document.getElementById('booking-details-content');
+        
+        // Format date
+        const bookingDate = new Date(booking.booking_date);
+        const formattedDate = bookingDate.toLocaleDateString();
+        
+        detailsContent.innerHTML = `
+            <div class="booking-details">
+                <p><strong>Service:</strong> ${booking.service_title}</p>
+                <p><strong>Date:</strong> ${formattedDate}</p>
+                <p><strong>Time:</strong> ${booking.booking_time}</p>
+                <p><strong>Customer:</strong> ${booking.customer_first_name} ${booking.customer_last_name}</p>
+                <p><strong>Amount:</strong> $${parseFloat(booking.service_price).toFixed(2)}</p>
+                <p><strong>Status:</strong> ${booking.status || 'Confirmed'}</p>
+                <p><strong>Address:</strong> ${booking.address || 'Not specified'}</p>
+                <p><strong>Notes:</strong> ${booking.notes || 'None'}</p>
+            </div>
+        `;
+        
+        // Show the modal
+        document.getElementById('booking-details-modal').style.display = 'block';
+    }
+
+    // Modal close handlers
+    document.getElementById('close-booking-modal').addEventListener('click', () => {
+        document.getElementById('booking-details-modal').style.display = 'none';
+    });
+    
+    document.getElementById('close-details-button').addEventListener('click', () => {
+        document.getElementById('booking-details-modal').style.display = 'none';
+    });
+    
+    document.getElementById('close-modal').addEventListener('click', () => {
+        document.getElementById('service-modal').style.display = 'none';
+    });
+    
+    document.getElementById('close-delete-modal').addEventListener('click', () => {
+        document.getElementById('delete-modal').style.display = 'none';
+    });
+
+    // Edit service functionality
+    window.editService = function(serviceId) {
+        //fetch(`/api/services/${serviceId}`)
+        fetch(`http://localhost:3000/api/services/${serviceId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const service = data.service;
+                    
+                    // Populate the form
+                    document.getElementById('service-id').value = service.id;
+                    document.getElementById('service-title').value = service.title;
+                    document.getElementById('service-category').value = service.category;
+                    document.getElementById('service-price').value = service.price;
+                    document.getElementById('service-description').value = service.description;
+                    document.getElementById('service-image').value = service.image;
+                    
+                    // Update modal title
+                    document.getElementById('modal-title').textContent = 'Edit Service';
+                    
+                    // Show the modal
+                    document.getElementById('service-modal').style.display = 'block';
+                } else {
+                    console.error('Error loading service:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching service:', error);
+            });
+    };
+
+    // Delete service functionality
+    window.deleteService = function(serviceId) {
+        document.getElementById('delete-modal').style.display = 'block';
+        
+        document.getElementById('confirm-delete-button').onclick = function() {
+            //fetch(`/api/services/${serviceId}`, {
+            fetch(`http://localhost:3000/api/services/${serviceId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('delete-modal').style.display = 'none';
+                    loadServices(); // Refresh the services list
+                } else {
+                    console.error('Error deleting service:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error during delete:', error);
+            });
+        };
+    };
+
+    // Add new service
+    document.getElementById('add-service-btn').addEventListener('click', () => {
+        // Reset the form
+        document.getElementById('service-form').reset();
+        document.getElementById('service-id').value = '';
+        
+        // Update modal title
+        document.getElementById('modal-title').textContent = 'Add New Service';
+        
+        // Show the modal
+        document.getElementById('service-modal').style.display = 'block';
+    });
+    
+    // Also hook up the banner add button
+    document.getElementById('add-service-btn-banner').addEventListener('click', () => {
+        document.getElementById('add-service-btn').click();
+    });
+
+    // Handle service form submission
+    document.getElementById('service-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const serviceId = document.getElementById('service-id').value;
+        const serviceData = {
+            title: document.getElementById('service-title').value,
+            category: document.getElementById('service-category').value,
+            price: parseFloat(document.getElementById('service-price').value),
+            description: document.getElementById('service-description').value,
+            image_url: document.getElementById('service-image').value || "/api/placeholder/400/320", // Use image_url to match server
+            provider_id: currentUser.userId,
+            provider_name: currentUser.name
+        };
+        
+        const method = serviceId ? 'PUT' : 'POST';
+        //const url = serviceId ? `/api/services/${serviceId}` : '/api/services';
+        const url = serviceId ? `http://localhost:3000/api/services/${serviceId}` : 'http://localhost:3000/api/services';
+        
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'  
+            },
+            body: JSON.stringify(serviceData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('service-modal').style.display = 'none';
+                loadServices(); // Refresh the services list
+            } else {
+                console.error('Error saving service:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error during save:', error);
+        });
+    });
+
+    // Cancel button on service form
+    document.getElementById('cancel-button').addEventListener('click', () => {
+        document.getElementById('service-modal').style.display = 'none';
+    });
+    
+    // Cancel button on delete modal
+    document.getElementById('cancel-delete-button').addEventListener('click', () => {
+        document.getElementById('delete-modal').style.display = 'none';
+    });
+
+    // Load services when the page loads
+    loadServices();
+});
+
+
+
+</script>
+<!--<script src="homeCleaner.js"></script>-->
 </body>
 </html>

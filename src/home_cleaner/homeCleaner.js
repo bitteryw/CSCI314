@@ -1,4 +1,8 @@
 // Boundary - Handles UI and user interaction
+console.log("Script running!");
+localStorage.setItem('userId', 'user01');
+localStorage.setItem('currentUserId', 'user01');
+
 class AddListing {
     constructor(addListingController) {
         this.controller = addListingController;

@@ -1179,42 +1179,67 @@
     
     // Create a booking
     async function createBooking(serviceId, date, time, address, notes) {
-        if (!currentUser) {
-            alert('Please log in to book a service');
-            return false;
-        }
+    if (!currentUser) {
+        alert('Please log in to book a service');
+        return false;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/api/bookings`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId: currentUser.user_id,
+                serviceId: serviceId,
+                date: date,
+                time: time,
+                address: address,
+                notes: notes
+            })
+        });
         
-        try {
-            const response = await fetch(`${API_URL}/api/bookings`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    userId: currentUser.user_id,
-                    serviceId: serviceId,
+        const data = await response.json();
+        
+        if (data.success) {
+            // Get the service details
+            const service = services.find(s => s.id === serviceId) || 
+                           shortlist.find(s => s.id === serviceId);
+            
+            if (service) {
+                // Create a new booking object and add it to bookingHistory
+                const newBookingId = bookingHistory.length > 0 ? 
+                                    Math.max(...bookingHistory.map(b => b.id)) + 1 : 1;
+                
+                const newBooking = {
+                    id: newBookingId,
+                    service: service,
                     date: date,
                     time: time,
                     address: address,
-                    notes: notes
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                // Refresh booking history if successful
-                fetchBookingHistory();
-                return true;
-            } else {
-                console.error('Failed to create booking:', data.message);
-                return false;
+                    notes: notes || '',
+                    status: 'Upcoming'  // Set status as Upcoming for new bookings
+                };
+                
+                // Add the new booking to the booking history array
+                bookingHistory.push(newBooking);
+                
+                // Refresh booking history display
+                renderBookingHistory(bookingHistory);
+                updateAnalytics(bookingHistory);
             }
-        } catch (error) {
-            console.error('Error creating booking:', error);
+            
+            return true;
+        } else {
+            console.error('Failed to create booking:', data.message);
             return false;
         }
+    } catch (error) {
+        console.error('Error creating booking:', error);
+        return false;
     }
+}
     
     // Update shortlist count badge
     function updateShortlistCount() {
@@ -1799,36 +1824,46 @@
     
     // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
-        // Setup user session
-        setupUserSession();
-        
-        // Load initial services
-        fetchServices();
-        
-        // Load shortlist
-        fetchShortlist();
-        
-        // Set current date as default for booking
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('booking-date').min = today;
-        document.getElementById('booking-date').value = today;
-        
-        // Event handler for mock API response
-        const fetchBookingHistoryOriginal = fetchBookingHistory;
-        fetchBookingHistory = async function() {
-            try {
-                showLoader(historyContainer);
+    // Setup user session
+    setupUserSession();
+    
+    // Load initial services
+    fetchServices();
+    
+    // Load shortlist
+    fetchShortlist();
+    
+    // Set current date as default for booking
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('booking-date').min = today;
+    document.getElementById('booking-date').value = today;
+    
+    // Initialize booking history with mock data ONLY if it's empty
+    let historyInitialized = false;
+    
+    // Modified event handler for mock API response
+    const fetchBookingHistoryOriginal = fetchBookingHistory;
+    fetchBookingHistory = async function() {
+        try {
+            showLoader(historyContainer);
+            
+            // Only use mock data if history hasn't been initialized yet
+            if (!historyInitialized && bookingHistory.length === 0) {
                 // Simulate API delay
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
-                // Mock API response
+                // Mock API response (initial data)
                 bookingHistory = mockBookingHistory();
-                renderBookingHistory(bookingHistory);
-                updateAnalytics(bookingHistory);
-            } catch (error) {
-                console.error('Error fetching booking history:', error);
-                showError(historyContainer, 'Failed to load booking history');
+                historyInitialized = true;
             }
-        };
-    });
+            
+            // Always render whatever is in the bookingHistory array
+            renderBookingHistory(bookingHistory);
+            updateAnalytics(bookingHistory);
+        } catch (error) {
+            console.error('Error fetching booking history:', error);
+            showError(historyContainer, 'Failed to load booking history');
+        }
+    };
+});
 </script>

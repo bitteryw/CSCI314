@@ -895,7 +895,418 @@ app.post('/api/bookings', async (req, res) => {
 
 //kh added for home owner-end
 
+//kh added for cleaner- start
+// API endpoints for service views and shortlists tracking
 
+// Increment service view count
+app.post('/api/services/:id/view', async (req, res) => {
+    try {
+        const serviceId = req.params.id;
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // First check if the service exists
+        const [serviceCheck] = await connection.execute(
+            'SELECT * FROM services WHERE id = ?',
+            [serviceId]
+        );
+        
+        if (serviceCheck.length === 0) {
+            await connection.end();
+            return res.status(404).json({
+                success: false,
+                message: 'Service not found'
+            });
+        }
+        
+        // Update view count (if view_count column exists) or add it
+        await connection.execute(
+            'UPDATE services SET view_count = COALESCE(view_count, 0) + 1 WHERE id = ?',
+            [serviceId]
+        );
+        
+        await connection.end();
+        
+        res.json({
+            success: true,
+            message: 'View count incremented'
+        });
+    } catch (error) {
+        console.error('Error incrementing view count:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to increment view count',
+            error: error.message
+        });
+    }
+});
+
+// Get booking history for a cleaner
+app.get('/api/cleaner/bookings/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        console.log(`Fetching bookings for provider: ${userId}`); // Added debug log
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Add these debug checks
+        const [userCheck] = await connection.execute(
+            'SELECT * FROM user_accounts WHERE user_id = ?',
+            [userId]
+        );
+        console.log(`User found: ${userCheck.length > 0 ? 'Yes' : 'No'}`);
+        
+        const [serviceCheck] = await connection.execute(
+            'SELECT COUNT(*) as count FROM services WHERE provider_id = ?',
+            [userId]
+        );
+        console.log(`Services count: ${serviceCheck[0].count}`);
+        
+        // Keep your existing query
+        const [bookings] = await connection.execute(`
+            SELECT b.*, 
+                   s.title as service_title, 
+                   s.price as service_price,
+                   ua.first_name as customer_first_name,
+                   ua.last_name as customer_last_name
+            FROM bookings b
+            JOIN services s ON b.service_id = s.id
+            JOIN user_accounts ua ON b.user_id = ua.user_id
+            WHERE s.provider_id = ?
+            ORDER BY b.booking_date DESC, b.booking_time DESC
+        `, [userId]);
+        
+        console.log(`Bookings found: ${bookings.length}`); // Added debug log
+        
+        // Add this additional debug if no bookings found
+        if (bookings.length === 0) {
+            const [allBookings] = await connection.execute('SELECT COUNT(*) as count FROM bookings');
+            console.log(`Total bookings in system: ${allBookings[0].count}`);
+        }
+        
+        await connection.end();
+        
+        res.json({
+            success: true,
+            bookings: bookings
+        });
+    } catch (error) {
+        console.error('Error fetching cleaner bookings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch bookings',
+            error: error.message
+        });
+    }
+});
+
+app.get('/api/user/bookings/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        console.log(`Trying alternative booking fetch for user: ${userId}`);
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // This query looks for bookings where this user is the customer
+        const [bookings] = await connection.execute(`
+            SELECT b.*, 
+                   s.title as service_title, 
+                   s.price as service_price,
+                   ua.first_name as provider_first_name,
+                   ua.last_name as provider_last_name
+            FROM bookings b
+            JOIN services s ON b.service_id = s.id
+            JOIN user_accounts ua ON s.provider_id = ua.user_id
+            WHERE b.user_id = ?
+            ORDER BY b.booking_date DESC, b.booking_time DESC
+        `, [userId]);
+        
+        console.log(`Alternative query found ${bookings.length} bookings`);
+        
+        await connection.end();
+        
+        res.json({
+            success: true,
+            bookings: bookings
+        });
+    } catch (error) {
+        console.error('Error in alternative booking fetch:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch bookings',
+            error: error.message
+        });
+    }
+});
+
+// Search booking history for a cleaner
+app.get('/api/cleaner/bookings/search/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const searchTerm = req.query.term || '';
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Search bookings by various criteria
+        const [bookings] = await connection.execute(`
+            SELECT b.*, 
+                   s.title as service_title, 
+                   s.price as service_price,
+                   ua.first_name as customer_first_name,
+                   ua.last_name as customer_last_name
+            FROM bookings b
+            JOIN services s ON b.service_id = s.id
+            JOIN user_accounts ua ON b.user_id = ua.user_id
+            WHERE s.provider_id = ?
+            AND (
+                s.title LIKE ? OR
+                ua.first_name LIKE ? OR
+                ua.last_name LIKE ? OR
+                b.address LIKE ? OR
+                b.notes LIKE ? OR
+                b.booking_date LIKE ? OR
+                b.booking_time LIKE ?
+            )
+            ORDER BY b.booking_date DESC, b.booking_time DESC
+        `, [
+            userId,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`
+        ]);
+        
+        await connection.end();
+        
+        res.json({
+            success: true,
+            bookings: bookings
+        });
+    } catch (error) {
+        console.error('Error searching cleaner bookings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to search bookings',
+            error: error.message
+        });
+    }
+});
+
+// Get cleaner's services with view and shortlist counts
+app.get('/api/cleaner/services/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Get all services provided by this cleaner
+        const [services] = await connection.execute(`
+            SELECT s.*,
+                   COALESCE(s.view_count, 0) as views,
+                   (SELECT COUNT(*) FROM shortlists sl WHERE sl.service_id = s.id) as shortlists
+            FROM services s
+            WHERE s.provider_id = ?
+            ORDER BY s.id DESC
+        `, [userId]);
+        
+        await connection.end();
+        
+        // Format the services to match the expected structure in the client
+        const formattedServices = services.map(service => ({
+            id: service.id,
+            title: service.title,
+            category: service.category,
+            price: parseFloat(service.price),
+            description: service.description,
+            image: service.image_url,
+            views: parseInt(service.views || 0),
+            shortlists: parseInt(service.shortlists || 0),
+            provider: {
+                name: service.provider_name,
+                avatar: service.provider_avatar
+            }
+        }));
+        
+        res.json({
+            success: true,
+            services: formattedServices
+        });
+    } catch (error) {
+        console.error('Error fetching cleaner services:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch services',
+            error: error.message
+        });
+    }
+});
+
+
+// Create a new service
+app.post('/api/services', async (req, res) => {
+    try {
+        console.log("Received service data:", req.body); // Add this line to debug
+        
+        const { title, category, price, description, image_url, provider_id, provider_name } = req.body;
+        
+        // Basic validation
+        if (!title || !category || !price) {
+            return res.status(400).json({
+                success: false,
+                message: 'Title, category, and price are required'
+            });
+        }
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Insert the new service
+        const [result] = await connection.execute(
+            'INSERT INTO services (title, category, price, description, image_url, provider_id, provider_name) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [
+                title, 
+                category, 
+                parseFloat(price), 
+                description || null, 
+                image_url || null, // Use the correct variable name here
+                provider_id, 
+                provider_name
+            ]
+        );
+        
+        await connection.end();
+        
+        res.json({
+            success: true,
+            message: 'Service added successfully',
+            serviceId: result.insertId
+        });
+    } catch (error) {
+        console.error('Error creating service:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create service',
+            error: error.message
+        });
+    }
+});
+
+// Delete a service
+app.delete('/api/services/:id', async (req, res) => {
+    try {
+        const serviceId = req.params.id;
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Check if service exists
+        const [existingService] = await connection.execute(
+            'SELECT * FROM services WHERE id = ?',
+            [serviceId]
+        );
+        
+        if (existingService.length === 0) {
+            await connection.end();
+            return res.status(404).json({
+                success: false,
+                message: 'Service not found'
+            });
+        }
+        
+        // Check if the service belongs to the user (optional)
+        // const userId = req.query.user_id;
+        // if (userId && existingService[0].provider_id !== userId) {
+        //     await connection.end();
+        //     return res.status(403).json({
+        //         success: false,
+        //         message: 'You can only delete your own services'
+        //     });
+        // }
+        
+        // Delete the service
+        await connection.execute(
+            'DELETE FROM services WHERE id = ?',
+            [serviceId]
+        );
+        
+        await connection.end();
+        
+        res.json({
+            success: true,
+            message: 'Service deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting service:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete service',
+            error: error.message
+        });
+    }
+});
+
+// Update an existing service
+app.put('/api/services/:id', async (req, res) => {
+    try {
+        const serviceId = req.params.id;
+        const { title, category, price, description, image_url, provider_id, provider_name } = req.body;
+        
+        // Basic validation
+        if (!title || !category || !price) {
+            return res.status(400).json({
+                success: false,
+                message: 'Title, category, and price are required'
+            });
+        }
+        
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        
+        // Check if service exists
+        const [existingService] = await connection.execute(
+            'SELECT * FROM services WHERE id = ?',
+            [serviceId]
+        );
+        
+        if (existingService.length === 0) {
+            await connection.end();
+            return res.status(404).json({
+                success: false,
+                message: 'Service not found'
+            });
+        }
+        
+        // Update the service
+        await connection.execute(
+            'UPDATE services SET title = ?, category = ?, price = ?, description = ?, image_url = ?, provider_id = ?, provider_name = ? WHERE id = ?',
+            [
+                title,
+                category,
+                parseFloat(price),
+                description || null,
+                image_url || null, // Use image_url here to match your form field name
+                provider_id,
+                provider_name,
+                serviceId
+            ]
+        );
+        
+        await connection.end();
+        
+        res.json({
+            success: true,
+            message: 'Service updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating service:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update service',
+            error: error.message
+        });
+    }
+});
+//kh added for cleaner-end
 
 
 // kh added for platform management-start
