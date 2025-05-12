@@ -443,6 +443,95 @@ app.delete('/api/listings/:id', async (req, res) => {
     }
 });
 
+app.get('/api/listings/search', async (req, res) => {
+    try {
+        const query = req.query.query || '';
+        const userId = req.query.userId || null;
+
+        // Log the search request
+        console.log(`Search request received - query: "${query}", userId: ${userId || 'not specified'}`);
+
+        // Skip empty searches
+        if (!query.trim()) {
+            // Return all listings or user's listings if userId provided
+            let sql = `
+                SELECT l.*, CONCAT(u.first_name, ' ', u.last_name) as provider_name 
+                FROM listings l
+                JOIN user_accounts u ON l.user_id = u.user_id
+            `;
+            let params = [];
+
+            if (userId) {
+                sql += ' WHERE l.user_id = ?';
+                params.push(userId);
+            }
+
+            sql += ' ORDER BY l.created_at DESC';
+
+            const connection = await mysql2Promise.createConnection(dbConfig);
+            const [rows] = await connection.execute(sql, params);
+            await connection.end();
+
+            return res.json({
+                success: true,
+                data: rows
+            });
+        }
+
+        // Build the SQL query for search with wildcards
+        let sql = `
+            SELECT l.*, CONCAT(u.first_name, ' ', u.last_name) as provider_name 
+            FROM listings l
+            JOIN user_accounts u ON l.user_id = u.user_id
+            WHERE (
+                l.title LIKE ? OR 
+                l.description LIKE ? OR 
+                l.category_name LIKE ? OR 
+                CAST(l.price AS CHAR) LIKE ?
+            )
+        `;
+
+        // Add user filter if userId is provided
+        if (userId) {
+            sql += ` AND l.user_id = ?`;
+        }
+
+        // Add order by created_at for consistent sorting
+        sql += ` ORDER BY l.created_at DESC`;
+
+        // Create the search parameter (with wildcards for partial matches)
+        const searchParam = `%${query}%`;
+
+        // Set up query parameters
+        let params = [searchParam, searchParam, searchParam, searchParam];
+
+        // Add userId to params if it was provided
+        if (userId) {
+            params.push(userId);
+        }
+
+        // Execute the query
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        const [rows] = await connection.execute(sql, params);
+        await connection.end();
+
+        console.log(`Search found ${rows.length} results`);
+
+        // Return the results
+        res.json({
+            success: true,
+            data: rows
+        });
+    } catch (error) {
+        console.error('Search error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to search listings',
+            error: error.message
+        });
+    }
+});
+
 // Make sure this endpoint is properly defined and not nested inside any conditional blocks
 // Place this with your other endpoint definitions
 
@@ -712,6 +801,196 @@ app.post('/api/toggle-suspension', async (req, res) => {
     }
 });
 
+// Add these endpoints to your server.js file
+
+// Get shortlisted listings for a user
+app.get('/api/shortlist/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const connection = await mysql2Promise.createConnection(dbConfig);
+
+        const [rows] = await connection.execute(`
+            SELECT l.*, CONCAT(u.first_name, ' ', u.last_name) as provider_name, 
+                   s.created_at as shortlisted_at
+            FROM shortlisted_listings s
+            JOIN listings l ON s.listing_id = l.listing_id
+            JOIN user_accounts u ON l.user_id = u.user_id
+            WHERE s.user_id = ?
+            ORDER BY s.created_at DESC
+        `, [userId]);
+
+        await connection.end();
+
+        res.json({
+            success: true,
+            data: rows
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch shortlisted listings',
+            error: error.message
+        });
+    }
+});
+
+// Add a listing to shortlist
+app.post('/api/shortlist', async (req, res) => {
+    try {
+        const { user_id, listing_id } = req.body;
+
+        // Validate required fields
+        if (!user_id || !listing_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID and Listing ID are required'
+            });
+        }
+
+        const connection = await mysql2Promise.createConnection(dbConfig);
+
+        // Check if the listing exists
+        const [listingCheck] = await connection.execute(
+            'SELECT * FROM listings WHERE listing_id = ?',
+            [listing_id]
+        );
+
+        if (listingCheck.length === 0) {
+            await connection.end();
+            return res.status(404).json({
+                success: false,
+                message: 'Listing not found'
+            });
+        }
+
+        // Check if user exists
+        const [userCheck] = await connection.execute(
+            'SELECT * FROM user_accounts WHERE user_id = ?',
+            [user_id]
+        );
+
+        if (userCheck.length === 0) {
+            await connection.end();
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Check if already shortlisted
+        const [existingShortlist] = await connection.execute(
+            'SELECT * FROM shortlisted_listings WHERE user_id = ? AND listing_id = ?',
+            [user_id, listing_id]
+        );
+
+        if (existingShortlist.length > 0) {
+            await connection.end();
+            return res.status(200).json({
+                success: true,
+                message: 'Listing is already in shortlist',
+                isShortlisted: true
+            });
+        }
+
+        // Add to shortlist
+        await connection.execute(
+            'INSERT INTO shortlisted_listings (user_id, listing_id) VALUES (?, ?)',
+            [user_id, listing_id]
+        );
+
+        await connection.end();
+
+        res.status(201).json({
+            success: true,
+            message: 'Listing added to shortlist',
+            isShortlisted: true
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to add listing to shortlist',
+            error: error.message
+        });
+    }
+});
+
+// Remove a listing from shortlist
+app.delete('/api/shortlist', async (req, res) => {
+    try {
+        const { user_id, listing_id } = req.body;
+
+        // Validate required fields
+        if (!user_id || !listing_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID and Listing ID are required'
+            });
+        }
+
+        const connection = await mysql2Promise.createConnection(dbConfig);
+
+        // Delete from shortlist
+        await connection.execute(
+            'DELETE FROM shortlisted_listings WHERE user_id = ? AND listing_id = ?',
+            [user_id, listing_id]
+        );
+
+        await connection.end();
+
+        res.json({
+            success: true,
+            message: 'Listing removed from shortlist',
+            isShortlisted: false
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to remove listing from shortlist',
+            error: error.message
+        });
+    }
+});
+
+// Check if a listing is shortlisted by a user
+app.get('/api/shortlist/check', async (req, res) => {
+    try {
+        const { user_id, listing_id } = req.query;
+
+        // Validate required fields
+        if (!user_id || !listing_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID and Listing ID are required'
+            });
+        }
+
+        const connection = await mysql2Promise.createConnection(dbConfig);
+
+        // Check if shortlisted
+        const [rows] = await connection.execute(
+            'SELECT * FROM shortlisted_listings WHERE user_id = ? AND listing_id = ?',
+            [user_id, listing_id]
+        );
+
+        await connection.end();
+
+        res.json({
+            success: true,
+            isShortlisted: rows.length > 0
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to check shortlist status',
+            error: error.message
+        });
+    }
+});
+
 // Test endpoint
 app.get('/test', (req, res) => {
     res.json({ message: 'Server is running' });
@@ -720,3 +999,13 @@ app.get('/test', (req, res) => {
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
+
+// CREATE TABLE shortlisted_listings (
+//   id INT AUTO_INCREMENT PRIMARY KEY,
+//   user_id VARCHAR(50) NOT NULL,
+//   listing_id INT NOT NULL,
+//   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//   UNIQUE KEY unique_shortlist (user_id, listing_id),
+//   FOREIGN KEY (user_id) REFERENCES user_accounts(user_id),
+//   FOREIGN KEY (listing_id) REFERENCES listings(listing_id)
+// );

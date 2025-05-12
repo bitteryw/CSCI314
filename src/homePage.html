@@ -396,7 +396,7 @@
 <header>
     <div class="container">
         <div class="header-content">
-            <a href="#" class="logo">CleanConnect</a>
+            <a href="homePage.html" class="logo">CleanConnect</a>
             <div class="search-container">
                 <input type="text" class="search-input" id="search-input" placeholder="Search for cleaning services...">
                 <button class="search-btn" id="search-btn">🔍</button>
@@ -419,8 +419,10 @@
             <p>Manage your cleaning service listings or browse services from other providers.</p>
         </div>
         <div>
+            <button class="btn btn-secondary" id="view-shortlist-btn" onclick="window.location.href='shortlist.html'" style="margin-right: 10px;">My Shortlist ❤️</button>
             <button class="btn" id="my-listings-btn" onclick="window.location.href='cleanerListings.html'">My Listings</button>
         </div>
+
     </div>
 
     <div class="filter-section">
@@ -528,6 +530,7 @@
         // Get the stored username or use a default
         const currentUserId = localStorage.getItem('currentUserId') || 'guest';
         const currentUsername = localStorage.getItem('currentUsername') || 'Guest User';
+        const userRole = localStorage.getItem('userRole') || 'home_owner';
 
         console.log('Initializing user info:', { currentUserId, currentUsername });
 
@@ -548,7 +551,34 @@
         if (userAvatar) {
             userAvatar.textContent = currentUsername.charAt(0).toUpperCase();
         }
+
+        if (userRole === 'home_owner') {
+        const addServiceBtn = document.getElementById('add-service-btn');
+        const myListingsBtn = document.getElementById('my-listings-btn');
+
+        if (addServiceBtn) {
+            addServiceBtn.style.display = 'none';
+        }
+
+        if (myListingsBtn) {
+            myListingsBtn.style.display = 'none';
+        }
     }
+    }
+
+    //hides user shortlist when user is not a homeowner
+    document.addEventListener('DOMContentLoaded', function() {
+        const userRole = localStorage.getItem('userRole') || 'home_owner';
+        const shortlistBtn = document.getElementById('view-shortlist-btn');
+
+        if (shortlistBtn) {
+            if (userRole === 'home_owner') {
+                shortlistBtn.style.display = 'inline-block';
+            } else {
+                shortlistBtn.style.display = 'none';
+            }
+        }
+    });
 
     // Run initialization when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
@@ -562,6 +592,7 @@
         initUserInfo();
     });
 </script>
-<script src="homeCleanerBCE.js"></script>
+<script src="home_cleaner/homeCleanerBCE.js"></script>
+<script src="home_owner/shortlist.js"></script>
 </body>
 </html>

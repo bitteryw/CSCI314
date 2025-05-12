@@ -53,10 +53,10 @@ class UserLoginPage {
 
         switch (processedRole) {
             case 'home_owner':
-                targetPage = "../src/home-owner.html";
+                targetPage = "../src/homePage.html";
                 break;
             case 'home_cleaner':
-                targetPage = "../src/home_cleaner/homePage.html";
+                targetPage = "../src/homePage.html";
                 break;
             case 'user_admin':
                 targetPage = "../src/user-management.html";

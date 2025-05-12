@@ -244,6 +244,15 @@ class readServicePage{
 
             this.servicesContainer.appendChild(card);
         });
+        setTimeout(() => {
+        console.log('Cards rendered, triggering shortlist initialization');
+        if (typeof shortListUI !== 'undefined') {
+            console.log('Creating new shortListUI instance');
+            new shortListUI();
+        } else {
+            console.log('shortListUI not found');
+        }
+    }, 100);
     }
 
     //initialize the reading of services
@@ -730,6 +739,195 @@ class serviceManagementController{
 }
 
 
+//boundary for search function
+class searchUI{
+    constructor() {
+        this.initDomElements();
+        this.setupEventListeners();
+        this.controller = new serviceSearchController();
+
+        // Determine which page we're on
+        this.isCleanerListingsPage = window.location.pathname.includes('cleanerListings.html');
+    }
+
+    initDomElements() {
+        this.searchInput = document.getElementById('search-input');
+        this.searchBtn = document.getElementById('search-btn');
+        this.servicesContainer = document.getElementById('services-container');
+    }
+
+    setupEventListeners() {
+        // Add search button click handler
+        if (this.searchBtn) {
+            this.searchBtn.addEventListener('click', () => this.handleSearch());
+        }
+
+        // Add Enter key support for search input
+        if (this.searchInput) {
+            this.searchInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    this.handleSearch();
+                }
+            });
+        }
+    }
+
+    handleSearch() {
+        const query = this.searchInput?.value?.trim() || '';
+
+        // Show loading state
+        this.showLoadingState();
+
+        // Call the controller to perform database search based on page type
+        if (this.isCleanerListingsPage) {
+            // On cleanerListings.html - search only user's listings
+            const userId = localStorage.getItem('currentUserId');
+            this.controller.searchListings(query, userId)
+                .then(result => this.displayResults(result, true))
+                .catch(error => this.handleSearchError(error));
+        } else {
+            // On homePage.html - search all listings
+            this.controller.searchListings(query)
+                .then(result => this.displayResults(result, false))
+                .catch(error => this.handleSearchError(error));
+        }
+    }
+
+    showLoadingState() {
+        // Simple loading indicator
+        if (this.servicesContainer) {
+            this.servicesContainer.innerHTML = '<p class="search-loading">Searching...</p>';
+        }
+    }
+
+    displayResults(result, isUserListings) {
+        if (!this.servicesContainer) return;
+
+        // Clear any existing results counter
+        const existingCounter = document.querySelector('.search-results-counter');
+        if (existingCounter) {
+            existingCounter.remove();
+        }
+
+        // Handle errors or no results
+        if (!result.success) {
+            this.servicesContainer.innerHTML = `<p class="search-message">Error: ${result.error || 'Something went wrong'}</p>`;
+            return;
+        }
+
+        if (!result.data || result.data.length === 0) {
+            const message = isUserListings
+                ? 'No matching listings found in your services. Try different keywords.'
+                : 'No matching listings found. Try different keywords.';
+
+            this.servicesContainer.innerHTML = `<p class="search-message">${message}</p>`;
+            return;
+        }
+
+        // Get the query for display purposes
+        const query = this.searchInput?.value?.trim() || '';
+
+        // Add a results counter if we have a query
+        if (query) {
+            const resultsCount = document.createElement('div');
+            resultsCount.className = 'search-results-counter';
+            resultsCount.innerHTML = `Found <strong>${result.data.length}</strong> ${result.data.length === 1 ? 'result' : 'results'} for "${this.escapeHtml(query)}"`;
+            this.servicesContainer.parentNode.insertBefore(resultsCount, this.servicesContainer);
+        }
+
+        // Use the appropriate page's rendering method to display results
+        if (isUserListings) {
+            try {
+                // We're on the cleaner listings page, show with management controls
+                const tempServicePage = new readServicePage();
+                tempServicePage.renderServiceCards(result.data, true);
+
+                // Re-attach event listeners for edit/delete buttons
+                this.reattachManagementEventListeners();
+            } catch (error) {
+                console.error('Error rendering user listings:', error);
+                this.servicesContainer.innerHTML = '<p class="search-message">Error displaying search results. Please try again.</p>';
+            }
+        } else {
+            try {
+                // Create a read service page instance to render all listings
+                const readPage = new readServicePage();
+                readPage.renderServiceCards(result.data);
+            } catch (error) {
+                console.error('Error rendering all listings:', error);
+                this.servicesContainer.innerHTML = '<p class="search-message">Error displaying search results. Please try again.</p>';
+            }
+        }
+    }
+
+    reattachManagementEventListeners() {
+        // Reattach event listeners to edit/delete buttons after search
+        const editButtons = document.querySelectorAll('.edit-service-btn');
+        const deleteButtons = document.querySelectorAll('.delete-service-btn');
+
+        // Handle edit button clicks
+        editButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const serviceId = event.target.getAttribute('data-id');
+                if (serviceId) {
+                    // Find or create a serviceManagementUI instance
+                    const managementUI = window.serviceManagementInstance || new serviceManagementUI();
+                    managementUI.openEditForm(serviceId);
+                }
+            });
+        });
+
+        // Handle delete button clicks
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const serviceId = event.target.getAttribute('data-id');
+                if (serviceId) {
+                    // Find or create a serviceManagementUI instance
+                    const managementUI = window.serviceManagementInstance || new serviceManagementUI();
+                    managementUI.openDeleteConfirmation(serviceId);
+                }
+            });
+        });
+    }
+
+    handleSearchError(error) {
+        console.error('Search error:', error);
+        if (this.servicesContainer) {
+            this.servicesContainer.innerHTML = '<p class="search-message">Failed to perform search. Please try again.</p>';
+        }
+    }
+
+    // Helper method to escape HTML and prevent XSS
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Checks if a document is ready, then initialize
+    static {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => new searchUI());
+    } else {
+        // DOM is already loaded
+        new searchUI();
+    }
+}
+}
+
+//controller for search function
+class serviceSearchController {
+    constructor() {
+        this.entity = new serviceSearchEntity();
+    }
+
+    async searchListings(query, userId = null) {
+        return this.entity.searchServices(query, userId);
+    }
+}
+
+
+
 //Entity
 class service{
     // Base URL for API calls
@@ -739,16 +937,16 @@ class service{
 
     //prepares api data for the database
     prepareApiData(serviceData) {
-        return {
-            listing_id: serviceData.listing_id || null,
-            title: serviceData.title || null,
-            description: serviceData.description || null,
-            price: serviceData.price || null,
-            image_path: serviceData.imageUrl || null,
-            user_id: serviceData.providerId || localStorage.getItem('currentUserId') || 'user01',
-            category: serviceData.category || null
-        };
-    }
+    return {
+        listing_id: serviceData.listing_id || null,
+        title: serviceData.title || null,
+        description: serviceData.description || null,
+        price: serviceData.price || null,
+        image_path: serviceData.imageUrl || null,
+        user_id: serviceData.providerId || localStorage.getItem('currentUserId') || 'user01',
+        category: serviceData.category || null
+    };
+}
     //creates a cleaning service listing on the website
     async createCleaningService(serviceData){
         try {
@@ -877,8 +1075,37 @@ class service{
     }
 
     //search for cleaning service listings
-    searchCleaningService(){
+    async searchServices(query, userId = null) {
+        try {
+            // Build the endpoint based on whether we're searching all listings or user listings
+            let endpoint = `${this.apiBaseUrl}/listings/search?query=${encodeURIComponent(query || '')}`;
 
+            // Add user ID parameter if provided (for searching user's listings only)
+            if (userId) {
+                endpoint += `&userId=${encodeURIComponent(userId)}`;
+            }
+
+            console.log('Searching with endpoint:', endpoint);
+
+            // Make the API call to the search endpoint
+            const response = await fetch(endpoint);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('Search results:', result);
+
+            return result;
+        } catch (error) {
+            console.error('Error searching services:', error);
+            return {
+                success: false,
+                error: error.message,
+                data: []
+            };
+        }
     }
 
     //gets only the user listings from the database
