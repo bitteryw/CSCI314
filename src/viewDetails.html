@@ -2,9 +2,542 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanConnect - Service Details</title>
+    <style>
+        :root {
+            --primary-color: #ff5722;
+            --secondary-color: #2196f3;
+            --light-gray: #f5f5f5;
+            --dark-gray: #757575;
+            --white: #ffffff;
+            --black: #333333;
+            --shadow: 0 2px 5px rgba(0,0,0,0.1);
+            --radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: var(--black);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--white);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 15px 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background-color: #e64a19;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #1976d2;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Service Details Styles */
+        .service-details {
+            background-color: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-top: 30px;
+            overflow: hidden;
+        }
+
+        .service-header {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .service-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .service-title-container {
+            padding: 20px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .service-title {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .service-price {
+            font-size: 22px;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .service-category {
+            display: inline-block;
+            background-color: var(--light-gray);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .service-body {
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: var(--black);
+            border-bottom: 1px solid var(--light-gray);
+            padding-bottom: 5px;
+        }
+
+        .service-description {
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        .provider-info {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--light-gray);
+            border-radius: var(--radius);
+        }
+
+        .provider-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+            margin-right: 15px;
+        }
+
+        .provider-details {
+            flex-grow: 1;
+        }
+
+        .provider-name {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .provider-joined {
+            font-size: 14px;
+            color: var(--dark-gray);
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .action-buttons .btn {
+            margin-right: 10px;
+        }
+
+        .shortlist-btn {
+            display: flex;
+            align-items: center;
+        }
+
+        .shortlist-icon {
+            margin-right: 5px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--dark-gray);
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: var(--primary-color);
+        }
+
+        /* User info in header */
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-left: 15px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        /* Responsive adjustments */
+        @media screen and (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+            }
+
+            .service-image {
+                height: 200px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .action-buttons .btn {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 10px;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="homePage.html" class="logo">CleanConnect</a>
+                <div style="display: flex; align-items: center;">
+                    <div class="user-info">
+                        <div class="user-avatar" id="user-avatar"></div>
+                        <span class="user-name" id="username-display">Guest User</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
 
+    <main class="container">
+        <a href="javascript:history.back()" class="back-link">← Back to listings</a>
+
+        <div class="service-details" id="service-details-container">
+            <!-- Service details will be loaded here -->
+            <div class="service-header">
+                <img src="" alt="" class="service-image" id="service-image">
+                <div class="service-title-container">
+                    <h1 class="service-title" id="service-title">Loading Service Details...</h1>
+                    <span class="service-price" id="service-price"></span>
+                    <div>
+                        <span class="service-category" id="service-category"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="service-body">
+                <h3 class="section-title">Description</h3>
+                <div class="service-description" id="service-description">
+                    Loading service description...
+                </div>
+
+                <div class="provider-info">
+                    <div class="provider-avatar" id="provider-avatar"></div>
+                    <div class="provider-details">
+                        <div class="provider-name" id="provider-name">Loading provider info...</div>
+                        <div class="provider-joined" id="provider-joined"></div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <div>
+                        <button class="btn" id="contact-provider-btn">Contact Provider</button>
+                        <button class="btn btn-secondary shortlist-btn" id="shortlist-btn">
+                            <span class="shortlist-icon">❤️</span> Add to Shortlist
+                        </button>
+                    </div>
+                    <a href="homePage.html" class="btn btn-outline">Browse More Services</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        // Function to initialize user information
+        function initUserInfo() {
+            // Get the stored username or use a default
+            const currentUserId = localStorage.getItem('currentUserId') || 'guest';
+            const currentUsername = localStorage.getItem('currentUsername') || 'Guest User';
+            const userRole = localStorage.getItem('userRole') || 'home_owner';
+
+            // Update username display
+            const usernameDisplay = document.getElementById('username-display');
+            if (usernameDisplay) {
+                usernameDisplay.textContent = currentUsername;
+            }
+
+            // Set avatar initial (first letter of username)
+            const userAvatar = document.getElementById('user-avatar');
+            if (userAvatar) {
+                userAvatar.textContent = currentUsername.charAt(0).toUpperCase();
+            }
+
+            // Show/hide shortlist button based on user role
+            const shortlistBtn = document.getElementById('shortlist-btn');
+            if (shortlistBtn && userRole !== 'home_owner') {
+                shortlistBtn.style.display = 'none';
+            }
+        }
+
+        // Function to load service details
+        async function loadServiceDetails() {
+            try {
+                // Get service ID from URL parameter
+                const serviceId = getUrlParameter('id');
+
+                if (!serviceId) {
+                    showError('Service ID is missing. Please go back and try again.');
+                    return;
+                }
+
+                console.log('Loading details for service ID:', serviceId);
+
+                // Fetch service details from API
+                const response = await fetch(`http://localhost:3000/api/listings/${serviceId}`);
+                const result = await response.json();
+
+                if (!result.success || !result.data) {
+                    showError('Failed to load service details. Please try again.');
+                    return;
+                }
+
+                // Get service data
+                const service = result.data;
+
+                // Update UI with service details
+                document.getElementById('service-title').textContent = service.title || 'Unnamed Service';
+                document.getElementById('service-price').textContent = formatPrice(service.price);
+                document.getElementById('service-category').textContent = service.category_name || service.category || 'Uncategorized';
+                document.getElementById('service-description').textContent = service.description || 'No description available';
+
+                // Set image
+                const serviceImage = document.getElementById('service-image');
+                serviceImage.src = service.image_path || 'https://placehold.co/600x400?text=Cleaning+Service';
+                serviceImage.alt = service.title || 'Service Image';
+
+                // Set provider info
+                const providerName = service.provider_name ||
+                                     (service.first_name && service.last_name ? `${service.first_name} ${service.last_name}` :
+                                     `Provider ${service.user_id}`);
+
+                document.getElementById('provider-name').textContent = providerName;
+
+                const createdAt = service.created_at || service.createdAt;
+                if (createdAt) {
+                    const joinDate = new Date(createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    document.getElementById('provider-joined').textContent = `Listed on ${joinDate}`;
+                }
+
+                // Set provider avatar
+                const providerAvatar = document.getElementById('provider-avatar');
+                if (providerAvatar) {
+                    providerAvatar.textContent = providerName.charAt(0).toUpperCase();
+                }
+
+                // Set up shortlist button
+                const shortlistBtn = document.getElementById('shortlist-btn');
+                if (shortlistBtn) {
+                    // Check if already in shortlist
+                    const shortlist = JSON.parse(localStorage.getItem('shortlist') || '[]');
+                    const isShortlisted = shortlist.some(item => item.id === serviceId);
+
+                    if (isShortlisted) {
+                        shortlistBtn.innerHTML = '<span class="shortlist-icon">❤️</span> Remove from Shortlist';
+                        shortlistBtn.classList.add('btn-outline');
+                    }
+
+                    // Add event listener for shortlist button
+                    shortlistBtn.addEventListener('click', () => {
+                        toggleShortlist(service, serviceId);
+                    });
+                }
+
+                // Set up contact button
+                const contactBtn = document.getElementById('contact-provider-btn');
+                if (contactBtn) {
+                    contactBtn.addEventListener('click', () => {
+                        alert(`Please contact ${providerName} to book this service.`);
+                        // In a real app, this would open a contact form or messaging interface
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error loading service details:', error);
+                showError('An error occurred while loading service details.');
+            }
+        }
+
+        // Function to show error message
+        function showError(message) {
+            const detailsContainer = document.getElementById('service-details-container');
+            if (detailsContainer) {
+                detailsContainer.innerHTML = `
+                    <div style="padding: 20px; text-align: center;">
+                        <h2>Error</h2>
+                        <p>${message}</p>
+                        <a href="homePage.html" class="btn" style="margin-top: 20px;">Return to Home</a>
+                    </div>
+                `;
+            }
+        }
+
+        // Function to format price
+        function formatPrice(price) {
+            const priceNum = typeof price === 'string' ? parseFloat(price) : price;
+            return !isNaN(priceNum) ? `S$${priceNum.toFixed(2)}` : 'Price not available';
+        }
+
+        // Function to toggle shortlist
+        function toggleShortlist(service, serviceId) {
+            // Get current shortlist from localStorage
+            let shortlist = JSON.parse(localStorage.getItem('shortlist') || '[]');
+
+            // Check if service is already in shortlist
+            const index = shortlist.findIndex(item => item.id === serviceId);
+
+            if (index === -1) {
+                // Add to shortlist
+                shortlist.push({
+                    id: serviceId,
+                    title: service.title,
+                    price: service.price,
+                    category: service.category_name || service.category,
+                    imageUrl: service.image_path,
+                    providerName: service.provider_name || `Provider ${service.user_id}`
+                });
+
+                // Update button to show "Remove from Shortlist"
+                const shortlistBtn = document.getElementById('shortlist-btn');
+                if (shortlistBtn) {
+                    shortlistBtn.innerHTML = '<span class="shortlist-icon">❤️</span> Remove from Shortlist';
+                    shortlistBtn.classList.add('btn-outline');
+                }
+
+                alert('Service added to your shortlist!');
+            } else {
+                // Remove from shortlist
+                shortlist.splice(index, 1);
+
+                // Update button to show "Add to Shortlist"
+                const shortlistBtn = document.getElementById('shortlist-btn');
+                if (shortlistBtn) {
+                    shortlistBtn.innerHTML = '<span class="shortlist-icon">❤️</span> Add to Shortlist';
+                    shortlistBtn.classList.remove('btn-outline');
+                }
+
+                alert('Service removed from your shortlist.');
+            }
+
+            // Save updated shortlist to localStorage
+            localStorage.setItem('shortlist', JSON.stringify(shortlist));
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // If no user ID is stored, set a default one for testing
+            if (!localStorage.getItem('currentUserId')) {
+                localStorage.setItem('currentUserId', 'user01');
+                localStorage.setItem('currentUsername', 'Guest User');
+                localStorage.setItem('userRole', 'home_owner');
+            }
+
+            // Initialize user info
+            initUserInfo();
+
+            // Load service details
+            loadServiceDetails();
+        });
+    </script>
+    <script src= 'viewDetails.js'></script>
 </body>
 </html>

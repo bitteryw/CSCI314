@@ -991,6 +991,361 @@ app.get('/api/shortlist/check', async (req, res) => {
     }
 });
 
+// Get count of shortlists for a listing
+// Get count of shortlists for a listing
+app.get('/api/shortlist/count', async (req, res) => {
+    try {
+        const { listing_id } = req.query;
+
+        if (!listing_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Listing ID is required'
+            });
+        }
+
+        console.log(`Counting shortlists for listing_id: ${listing_id}`);
+
+        const connection = await mysql2Promise.createConnection(dbConfig);
+
+        // Count shortlists for this listing - ensuring we're matching the right column
+        // Using debug logs to help troubleshoot
+        const query = 'SELECT COUNT(*) as count FROM shortlisted_listings WHERE listing_id = ?';
+        console.log('Executing query:', query);
+        console.log('With parameter:', listing_id);
+
+        const [rows] = await connection.execute(query, [listing_id]);
+
+        console.log('Query result:', rows);
+
+        await connection.end();
+
+        const count = rows[0]?.count || 0;
+
+        res.json({
+            success: true,
+            count: count
+        });
+    } catch (error) {
+        console.error('Error counting shortlists:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error counting shortlists',
+            error: error.message
+        });
+    }
+});
+
+// Get all listings with shortlist counts for a specific user
+app.get('/api/listings/stats/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        console.log(`Fetching listing stats for user: ${userId}`);
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID is required'
+            });
+        }
+
+        const connection = await mysql2Promise.createConnection(dbConfig);
+
+        // Get all user's listings with shortlist counts in a single efficient query
+        const [rows] = await connection.execute(`
+            SELECT 
+                l.listing_id,
+                l.title,
+                l.description,
+                l.price,
+                l.image_path,
+                l.user_id,
+                l.created_at,
+                COUNT(s.id) as shortlist_count
+            FROM 
+                listings l
+            LEFT JOIN 
+                shortlisted_listings s ON l.listing_id = s.listing_id
+            WHERE 
+                l.user_id = ?
+            GROUP BY 
+                l.listing_id
+            ORDER BY 
+                l.created_at DESC
+        `, [userId]);
+
+        console.log(`Found ${rows.length} listings with stats for user ${userId}`);
+
+        await connection.end();
+
+        res.json({
+            success: true,
+            data: rows
+        });
+    } catch (error) {
+        console.error('Error fetching listing stats:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch listing statistics',
+            error: error.message
+        });
+    }
+});
+
+// Record a new view for a listing
+app.post('/api/views', async (req, res) => {
+    try {
+        const { listing_id, viewer_id, view_source, user_agent } = req.body;
+
+        // Basic validation
+        if (!listing_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Listing ID is required'
+            });
+        }
+
+        const connection = await mysql2Promise.createConnection(dbConfig);
+
+        // Check if the listing exists
+        const [listingCheck] = await connection.execute(
+            'SELECT * FROM listings WHERE listing_id = ?',
+            [listing_id]
+        );
+
+        if (listingCheck.length === 0) {
+            await connection.end();
+            return res.status(404).json({
+                success: false,
+                message: 'Listing not found'
+            });
+        }
+
+        // If a viewer_id is provided, check if the user exists
+        if (viewer_id) {
+            const [userCheck] = await connection.execute(
+                'SELECT * FROM user_accounts WHERE user_id = ?',
+                [viewer_id]
+            );
+
+            if (userCheck.length === 0) {
+                // User not found, continue but set viewer_id to NULL
+                console.warn(`User ${viewer_id} not found, recording view as anonymous`);
+            }
+        }
+
+        // Insert the view record
+        const [result] = await connection.execute(
+            'INSERT INTO listing_views (listing_id, viewer_id, view_source, user_agent) VALUES (?, ?, ?, ?)',
+            [listing_id, viewer_id || null, view_source || 'homepage', user_agent || null]
+        );
+
+        await connection.end();
+
+        res.status(201).json({
+            success: true,
+            message: 'View recorded successfully',
+            view_id: result.insertId
+        });
+    } catch (error) {
+        console.error('Error recording view:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to record view',
+            error: error.message
+        });
+    }
+});
+
+// Get view statistics for a listing
+app.get('/api/views/listing/:listingId', async (req, res) => {
+    try {
+        const { listingId } = req.params;
+        const connection = await mysql2Promise.createConnection(dbConfig);
+
+        // Get total views
+        const [totalViews] = await connection.execute(
+            'SELECT COUNT(*) as total FROM listing_views WHERE listing_id = ?',
+            [listingId]
+        );
+
+        // Get views for today
+        const [todayViews] = await connection.execute(
+            'SELECT COUNT(*) as today FROM listing_views WHERE listing_id = ? AND DATE(view_date) = CURDATE()',
+            [listingId]
+        );
+
+        // Get views for this week (Sunday to Saturday)
+        const [weeklyViews] = await connection.execute(
+            'SELECT COUNT(*) as weekly FROM listing_views WHERE listing_id = ? AND YEARWEEK(view_date, 1) = YEARWEEK(CURDATE(), 1)',
+            [listingId]
+        );
+
+        // Get views for this month
+        const [monthlyViews] = await connection.execute(
+            'SELECT COUNT(*) as monthly FROM listing_views WHERE listing_id = ? AND MONTH(view_date) = MONTH(CURDATE()) AND YEAR(view_date) = YEAR(CURDATE())',
+            [listingId]
+        );
+
+        await connection.end();
+
+        res.json({
+            success: true,
+            data: {
+                listing_id: listingId,
+                views: {
+                    total: totalViews[0].total,
+                    today: todayViews[0].today,
+                    weekly: weeklyViews[0].weekly,
+                    monthly: monthlyViews[0].monthly
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching view statistics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch view statistics',
+            error: error.message
+        });
+    }
+});
+
+// Get view statistics for all listings of a user
+app.get('/api/views/user/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const connection = await mysql2Promise.createConnection(dbConfig);
+
+        // Get all listings for the user
+        const [userListings] = await connection.execute(
+            'SELECT listing_id FROM listings WHERE user_id = ?',
+            [userId]
+        );
+
+        if (userListings.length === 0) {
+            await connection.end();
+            return res.json({
+                success: true,
+                data: []
+            });
+        }
+
+        // Create a list of listing IDs
+        const listingIds = userListings.map(listing => listing.listing_id);
+
+        // Use a placeholder for each listing ID in the IN clause
+        const placeholders = listingIds.map(() => '?').join(',');
+
+        // Get today's views for all listings
+        const [todayViews] = await connection.execute(
+            `SELECT listing_id, COUNT(*) as views 
+             FROM listing_views 
+             WHERE listing_id IN (${placeholders}) AND DATE(view_date) = CURDATE() 
+             GROUP BY listing_id`,
+            [...listingIds]
+        );
+
+        // Get this week's views
+        const [weeklyViews] = await connection.execute(
+            `SELECT listing_id, COUNT(*) as views 
+             FROM listing_views 
+             WHERE listing_id IN (${placeholders}) AND YEARWEEK(view_date, 1) = YEARWEEK(CURDATE(), 1) 
+             GROUP BY listing_id`,
+            [...listingIds]
+        );
+
+        // Get this month's views
+        const [monthlyViews] = await connection.execute(
+            `SELECT listing_id, COUNT(*) as views 
+             FROM listing_views 
+             WHERE listing_id IN (${placeholders}) AND MONTH(view_date) = MONTH(CURDATE()) AND YEAR(view_date) = YEAR(CURDATE()) 
+             GROUP BY listing_id`,
+            [...listingIds]
+        );
+
+        // Get all listings with details
+        const [listingsDetails] = await connection.execute(
+            `SELECT l.*, CONCAT(u.first_name, ' ', u.last_name) as provider_name,
+                    (SELECT COUNT(*) FROM shortlisted_listings sl WHERE sl.listing_id = l.listing_id) as shortlist_count
+             FROM listings l
+             JOIN user_accounts u ON l.user_id = u.user_id
+             WHERE l.user_id = ?
+             ORDER BY l.created_at DESC`,
+            [userId]
+        );
+
+        // Build the response data combining listing details with view stats
+        const responseData = listingsDetails.map(listing => {
+            const listingId = listing.listing_id;
+
+            // Find view counts for this listing
+            const dayViews = todayViews.find(item => item.listing_id === listingId);
+            const weekViews = weeklyViews.find(item => item.listing_id === listingId);
+            const monthViews = monthlyViews.find(item => item.listing_id === listingId);
+
+            return {
+                ...listing,
+                views: {
+                    day: dayViews ? dayViews.views : 0,
+                    week: weekViews ? weekViews.views : 0,
+                    month: monthViews ? monthViews.views : 0
+                }
+            };
+        });
+
+        await connection.end();
+
+        res.json({
+            success: true,
+            data: responseData
+        });
+    } catch (error) {
+        console.error('Error fetching user listing view statistics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch view statistics',
+            error: error.message
+        });
+    }
+});
+
+// Get a single listing by ID
+app.get('/api/listings/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const connection = await mysql2Promise.createConnection(dbConfig);
+        const [rows] = await connection.execute(`
+            SELECT l.*, CONCAT(u.first_name, ' ', u.last_name) as provider_name 
+            FROM listings l
+            JOIN user_accounts u ON l.user_id = u.user_id
+            WHERE l.listing_id = ?
+        `, [id]);
+        await connection.end();
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Listing not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: rows[0]
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch listing details',
+            error: error.message
+        });
+    }
+});
+
 // Test endpoint
 app.get('/test', (req, res) => {
     res.json({ message: 'Server is running' });
@@ -1000,12 +1355,3 @@ app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
 
-// CREATE TABLE shortlisted_listings (
-//   id INT AUTO_INCREMENT PRIMARY KEY,
-//   user_id VARCHAR(50) NOT NULL,
-//   listing_id INT NOT NULL,
-//   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-//   UNIQUE KEY unique_shortlist (user_id, listing_id),
-//   FOREIGN KEY (user_id) REFERENCES user_accounts(user_id),
-//   FOREIGN KEY (listing_id) REFERENCES listings(listing_id)
-// );

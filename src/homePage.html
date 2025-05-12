@@ -419,12 +419,10 @@
             <p>Manage your cleaning service listings or browse services from other providers.</p>
         </div>
         <div>
-            <button class="btn btn-secondary" id="view-shortlist-btn" onclick="window.location.href='shortlist.html'" style="margin-right: 10px;">My Shortlist ❤️</button>
-            <button class="btn" id="my-listings-btn" onclick="window.location.href='cleanerListings.html'">My Listings</button>
+            <button class="btn btn-secondary" id="view-shortlist-btn" onclick="window.location.href='../src/home_owner/home_owner_shortlists.html'" style="margin-right: 10px;">My Shortlist ❤️</button>
+            <button class="btn" id="my-listings-btn" onclick="window.location.href='../src/home_cleaner/cleanerListings.html'">My Listings</button>
         </div>
-
     </div>
-
     <div class="filter-section">
         <h3 class="filter-title">Filter Services</h3>
         <div class="filter-options">
@@ -516,7 +514,7 @@
 
 
 <script>
-    // Function to close the modal
+// Function to close the modal
     function closeModal() {
         document.getElementById('service-modal').style.display = 'none';
     }
@@ -553,17 +551,17 @@
         }
 
         if (userRole === 'home_owner') {
-        const addServiceBtn = document.getElementById('add-service-btn');
-        const myListingsBtn = document.getElementById('my-listings-btn');
+            const addServiceBtn = document.getElementById('add-service-btn');
+            const myListingsBtn = document.getElementById('my-listings-btn');
 
-        if (addServiceBtn) {
-            addServiceBtn.style.display = 'none';
-        }
+            if (addServiceBtn) {
+                addServiceBtn.style.display = 'none';
+            }
 
-        if (myListingsBtn) {
-            myListingsBtn.style.display = 'none';
+            if (myListingsBtn) {
+                myListingsBtn.style.display = 'none';
+            }
         }
-    }
     }
 
     //hides user shortlist when user is not a homeowner
@@ -590,9 +588,114 @@
 
         // Initialize the user info regardless
         initUserInfo();
+
+        // Load the services
+        loadServices();
     });
+
+// Store the original loadServices function to restore listings when search is cleared
+if (typeof loadServices === 'function') {
+    window.originalLoadServices = loadServices;
+}
+
+// Update the loadServices function to also cache services for searching
+async function loadServices() {
+    try {
+        console.log('Loading services...');
+        const servicesContainer = document.getElementById('services-container');
+
+        if (!servicesContainer) {
+            console.error('Services container not found');
+            return;
+        }
+
+        // Show loading indicator
+        servicesContainer.innerHTML = '<p>Loading services...</p>';
+
+        // Fetch services from your API
+        const response = await fetch('http://localhost:3000/api/listings');
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+            console.error('Failed to load services:', result.message);
+            servicesContainer.innerHTML = '<p>Failed to load services. Please try again.</p>';
+            return;
+        }
+
+        const services = result.data;
+        console.log(`Loaded ${services.length} services`);
+
+        // Cache services for client-side search
+        if (window.searchInstance) {
+            window.searchInstance.allServices = services;
+            console.log('Cached services for search functionality');
+        }
+
+        // Clear existing content
+        servicesContainer.innerHTML = '';
+
+        if (services.length === 0) {
+            servicesContainer.innerHTML = '<p>No services available.</p>';
+            return;
+        }
+
+        // Rest of your existing loadServices code...
+        // Create service cards from template and append to container
+        const template = document.getElementById('service-card-template');
+
+        services.forEach(service => {
+            // Clone the template
+            const card = document.importNode(template.content, true);
+
+            // Your existing card population code...
+            card.querySelector('.service-title').textContent = service.title || 'Unnamed Service';
+            card.querySelector('.service-price').textContent = `S$${parseFloat(service.price || 0).toFixed(2)}`;
+            // etc...
+
+            // Append to container
+            servicesContainer.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error('Error loading services:', error);
+        const container = document.getElementById('services-container');
+        if (container) {
+            container.innerHTML = '<p>An error occurred while loading services. Please try again.</p>';
+        }
+    }
+}
+
+// Replace or enhance the existing search-related DOM content loaded handler
+document.addEventListener('DOMContentLoaded', function() {
+    // Get search input element
+    const searchInput = document.getElementById('search-input');
+    if (!searchInput) return;
+
+    console.log('Setting up enhanced search listener');
+
+    // Override with a simple handler that uses Enter key
+    searchInput.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') {
+            console.log('Search triggered by Enter key');
+            // If searchInstance exists, use it
+            if (window.searchInstance && typeof window.searchInstance.handleSearch === 'function') {
+                window.searchInstance.handleSearch();
+            }
+        }
+    });
+
+    // Update placeholder
+    searchInput.placeholder = "Search listings... (press Enter)";
+});
 </script>
 <script src="home_cleaner/homeCleanerBCE.js"></script>
+<script src="viewDetails.js"></script>
+<script src="view_tracking.js"></script>
 <script src="home_owner/shortlist.js"></script>
 </body>
 </html>

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CleanConnect - Service Statistics</title>
+  <style>
+    :root {
+      --primary-color: #ff5722;
+      --secondary-color: #2196f3;
+      --light-gray: #f5f5f5;
+      --dark-gray: #757575;
+      --white: #ffffff;
+      --black: #333333;
+      --shadow: 0 2px 5px rgba(0,0,0,0.1);
+      --radius: 8px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #f8f9fa;
+      color: var(--black);
+      line-height: 1.6;
+    }
+
+    header {
+      background-color: var(--white);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 15px 0;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+
+    .search-container {
+      flex-grow: 1;
+      margin: 0 20px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: var(--radius);
+      font-size: 16px;
+    }
+
+    .btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #e64a19;
+    }
+
+    .btn-secondary {
+      background-color: var(--secondary-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: #1976d2;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      margin-left: 15px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .welcome-banner {
+      background-color: var(--white);
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Stats specific styles */
+    .stats-container {
+      margin-top: 20px;
+    }
+
+    .stats-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .stats-title {
+      font-size: 24px;
+      color: var(--black);
+    }
+
+    .time-filter {
+      display: flex;
+      gap: 10px;
+    }
+
+    .filter-btn {
+      padding: 5px 15px;
+      background-color: var(--light-gray);
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .filter-btn.active {
+      background-color: var(--primary-color);
+      color: var(--white);
+    }
+
+    /* Table Styles */
+    .stats-table {
+      width: 100%;
+      background-color: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border-collapse: collapse;
+      overflow: hidden;
+    }
+
+    .stats-table th,
+    .stats-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid var(--light-gray);
+    }
+
+    .stats-table th {
+      background-color: var(--primary-color);
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    .stats-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .stats-table tr:hover {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    .stats-table td:first-child,
+    .stats-table th:first-child {
+      padding-left: 20px;
+    }
+
+    .stats-table td:last-child,
+    .stats-table th:last-child {
+      padding-right: 20px;
+    }
+
+    .loading {
+      padding: 20px;
+      text-align: center;
+      background-color: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .no-stats {
+      text-align: center;
+      padding: 40px;
+      background-color: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    /* Notification styles */
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 4px;
+      color: white;
+      font-weight: bold;
+      z-index: 1000;
+      transition: opacity 0.5s;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Responsive adjustments */
+    @media screen and (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+      }
+
+      .search-container {
+        margin: 15px 0;
+        width: 100%;
+      }
+
+      .welcome-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .stats-table {
+        font-size: 14px;
+      }
+
+      .stats-table th,
+      .stats-table td {
+        padding: 8px 10px;
+      }
+
+      .stats-header {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .time-filter {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <a href="../homePage.html" class="logo">CleanConnect</a>
+        <div class="search-container">
+          <input type="text" class="search-input" id="search-input" placeholder="Search my services...">
+          <button class="search-btn" id="search-btn">🔍</button>
+        </div>
+        <div style="display: flex; align-items: center;">
+          <button class="btn" id="add-service-btn" onclick="window.location.href='cleanerListings.html'">My Listings</button>
+          <div class="user-info">
+            <div class="user-avatar" id="user-avatar"></div>
+            <span class="user-name" id="username-display">Guest User</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="welcome-banner">
+      <div>
+        <h3>Service Statistics</h3>
+        <p>Track your service performance and engagement metrics</p>
+      </div>
+      <div>
+        <button class="btn" onclick="window.location.href='cleanerListings.html'">Back to Listings</button>
+      </div>
+    </div>
+
+    <div class="stats-container">
+      <div class="stats-header">
+        <h2 class="stats-title">Performance Metrics</h2>
+      </div>
+
+      <div id="stats-container">
+        <!-- Stats table will be dynamically generated here -->
+        <div class="loading">Loading your service statistics...</div>
+      </div>
+    </div>
+  </main>
+
+  <div id="notification" style="display: none;"></div>
+
+  <script>
+    // Function to initialize user information
+    function initUserInfo() {
+      // Get the stored username or use a default
+      const currentUserId = localStorage.getItem('currentUserId') || 'guest';
+      const currentUsername = localStorage.getItem('currentUsername') || 'Guest User';
+
+      console.log('Initializing user info:', { currentUserId, currentUsername });
+
+      // Update all username display elements
+      const usernameElements = [
+        document.getElementById('username-display')
+      ];
+
+      usernameElements.forEach(element => {
+        if (element) {
+          element.textContent = currentUsername;
+        }
+      });
+
+      // Set avatar initial (first letter of username)
+      const userAvatar = document.getElementById('user-avatar');
+      if (userAvatar) {
+        userAvatar.textContent = currentUsername.charAt(0).toUpperCase();
+      }
+    }
+
+    // Run initialization when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // If no user ID is stored, set a default one for testing
+      if (!localStorage.getItem('currentUserId')) {
+        localStorage.setItem('currentUserId', 'user01');
+        localStorage.setItem('currentUsername', 'Guest User');
+      }
+
+      // Initialize the user info regardless
+      initUserInfo();
+    });
+  </script>
+  <script src="service_stats.js"></script>
+</body>
+</html>

@@ -157,3 +157,12 @@ VALUES ('1', 'CAT001');
 ALTER TABLE listings
     MODIFY listing_id INT AUTO_INCREMENT;
 
+CREATE TABLE shortlisted_listings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL,
+    listing_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_shortlist (user_id, listing_id),
+    FOREIGN KEY (user_id) REFERENCES user_accounts(user_id),
+    FOREIGN KEY (listing_id) REFERENCES listings(listing_id)
+);
